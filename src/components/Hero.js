@@ -11,7 +11,7 @@ const Hero = () => {
           <Col>
             <div className="mb-4">
               <img
-                src="./static/images/khpl.jpeg"
+                src="/static/images/khpl.jpeg"
                 alt="KHPL Logo"
                 className="rounded-circle border border-white border-3"
                 style={{ width: '150px', height: '150px' }}

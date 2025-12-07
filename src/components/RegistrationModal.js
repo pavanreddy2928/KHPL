@@ -478,7 +478,7 @@ const RegistrationModal = ({ show, handleClose }) => {
               </h6>
               <div className="qr-code-container bg-white border rounded p-3 mb-3 mx-auto" style={{width: '220px'}}>
                 <img 
-                  src="./static/images/KHPL-QR-CODE.jpeg" 
+                  src="/static/images/KHPL-QR-CODE.jpeg" 
                   alt="KHPL QR Code for Payment" 
                   className="img-fluid rounded"
                   style={{width: '100%', height: 'auto', maxHeight: '150px', objectFit: 'contain'}}
