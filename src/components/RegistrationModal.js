@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Modal, Button, Form, Row, Col, Alert, Spinner } from 'react-bootstrap';
 import { saveRegistrationData, loadRegistrationData } from '../utils/awsS3Storage';
-import { loadImageFromS3 } from '../utils/s3ImageLoader';
 
 const RegistrationModal = ({ show, handleClose }) => {
   const [formData, setFormData] = useState({
@@ -19,16 +18,6 @@ const RegistrationModal = ({ show, handleClose }) => {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showPaymentScreen, setShowPaymentScreen] = useState(false);
   const [paymentScreenshot, setPaymentScreenshot] = useState(null);
-  const [qrCodeUrl, setQrCodeUrl] = useState(null);
-
-  // Load QR code from S3 when component mounts
-  useEffect(() => {
-    const loadQRCode = async () => {
-      const url = await loadImageFromS3('KHPL-QR-CODE.jpeg');
-      setQrCodeUrl(url);
-    };
-    loadQRCode();
-  }, []);
 
   const handleModalClose = () => {
     setShowPaymentScreen(false);
@@ -489,7 +478,7 @@ const RegistrationModal = ({ show, handleClose }) => {
               </h6>
               <div className="qr-code-container bg-white border rounded p-3 mb-3 mx-auto" style={{width: '220px'}}>
                 <img 
-                  src={qrCodeUrl || "/KHPL-QR-CODE.jpeg"} 
+                  src="/static/images/KHPL-QR-CODE.jpeg" 
                   alt="KHPL QR Code for Payment" 
                   className="img-fluid rounded"
                   style={{width: '100%', height: 'auto', maxHeight: '150px', objectFit: 'contain'}}

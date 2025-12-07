@@ -8,20 +8,9 @@ import SocialMedia from './components/SocialMedia';
 import Footer from './components/Footer';
 import ContactUs from './components/ContactUs';
 import RegistrationStatus from './components/RegistrationStatus';
-import { preloadEssentialImages, cleanupImageCache } from './utils/s3ImageLoader';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
-
-  useEffect(() => {
-    // Preload essential images from S3
-    preloadEssentialImages();
-
-    // Cleanup on unmount
-    return () => {
-      cleanupImageCache();
-    };
-  }, []);
 
   useEffect(() => {
     const handleHashChange = () => {

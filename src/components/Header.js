@@ -2,14 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Navbar, Nav, Container } from 'react-bootstrap';
 import AdminPanel from './AdminPanel';
 import AdminLogin from './AdminLogin';
-import { loadImageFromS3 } from '../utils/s3ImageLoader';
 
 const Header = () => {
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [adminUser, setAdminUser] = useState(null);
-  const [logoUrl, setLogoUrl] = useState(null);
 
   // Check if admin is already logged in on component mount
   useEffect(() => {
@@ -19,13 +17,6 @@ const Header = () => {
       setIsAdminLoggedIn(true);
       setAdminUser(adminData);
     }
-
-    // Load logo from S3
-    const loadLogo = async () => {
-      const url = await loadImageFromS3('khpl.jpeg');
-      setLogoUrl(url);
-    };
-    loadLogo();
   }, []);
 
   const handleCloseAdminLogin = () => setShowAdminLogin(false);
@@ -78,7 +69,7 @@ const Header = () => {
       <Container>
         <Navbar.Brand href="#home" className="fw-bold">
           <img
-            src={logoUrl || "/khpl.jpeg"}
+            src="/static/images/khpl.jpeg"
             width="40"
             height="40"
             className="d-inline-block align-top me-2 rounded-circle"

@@ -1,19 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import { FaInstagram, FaYoutube, FaFacebookF } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
-import { loadImageFromS3 } from '../utils/s3ImageLoader';
 
 const Hero = () => {
-  const [logoUrl, setLogoUrl] = useState(null);
-
-  useEffect(() => {
-    const loadLogo = async () => {
-      const url = await loadImageFromS3('khpl.jpeg');
-      setLogoUrl(url);
-    };
-    loadLogo();
-  }, []);
   return (
     <section className="hero-section bg-primary text-white py-5">
       <Container>
@@ -21,7 +11,7 @@ const Hero = () => {
           <Col>
             <div className="mb-4">
               <img
-                src={logoUrl || "/khpl.jpeg"}
+                src="/static/images/khpl.jpeg"
                 alt="KHPL Logo"
                 className="rounded-circle border border-white border-3"
                 style={{ width: '150px', height: '150px' }}
