@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Badge, Button } from 'react-bootstrap';
 import * as XLSX from 'xlsx';
-import { loadFromGitHub } from '../utils/githubStorage';
+import { loadRegistrationData } from '../utils/awsS3Storage';
 
 const RegistrationSheet = () => {
   const [registrations, setRegistrations] = useState([]);
@@ -21,19 +21,17 @@ const RegistrationSheet = () => {
 
   const loadRegistrations = async () => {
     try {
-      // Try to load from GitHub first
-      const githubData = await loadFromGitHub('registrations.json');
-      if (githubData && Array.isArray(githubData)) {
-        setRegistrations(githubData);
-        // Update localStorage as backup
-        localStorage.setItem('khplRegistrations', JSON.stringify(githubData));
+      // Load from S3 with localStorage fallback
+      const data = await loadRegistrationData();
+      if (data && Array.isArray(data)) {
+        setRegistrations(data);
         return;
       }
     } catch (error) {
-      console.error('Failed to load from GitHub:', error);
+      console.error('Failed to load registration data:', error);
     }
     
-    // Fallback to localStorage
+    // Final fallback to localStorage
     const localData = JSON.parse(localStorage.getItem('khplRegistrations') || '[]');
     setRegistrations(localData);
   };

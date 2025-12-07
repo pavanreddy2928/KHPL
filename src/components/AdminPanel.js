@@ -10,6 +10,7 @@ const AdminPanel = ({ show, handleClose }) => {
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [showAttachmentsModal, setShowAttachmentsModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (show) {
@@ -18,19 +19,35 @@ const AdminPanel = ({ show, handleClose }) => {
   }, [show]);
 
   const loadRegistrations = async () => {
+    setIsLoading(true);
     try {
+      console.log('Loading registration data...');
+      
       // Load from S3 with localStorage fallback
       const data = await loadRegistrationData();
+      
       if (data && Array.isArray(data)) {
+        console.log(`Loaded ${data.length} registrations`);
         setRegistrations(data);
-        return;
+        setLastUpdated(new Date());
+      } else {
+        console.log('No registration data found');
+        setRegistrations([]);
       }
     } catch (error) {
       console.error('Failed to load registration data:', error);
+      // Try localStorage as final fallback
+      try {
+        const localData = JSON.parse(localStorage.getItem('khplRegistrations') || '[]');
+        console.log(`Loaded ${localData.length} registrations from localStorage fallback`);
+        setRegistrations(localData);
+      } catch (localError) {
+        console.error('localStorage fallback also failed:', localError);
+        setRegistrations([]);
+      }
+    } finally {
+      setIsLoading(false);
     }
-    
-    // Final fallback to empty array
-    setRegistrations([]);
   };
 
   const exportAllToExcel = () => {
@@ -61,24 +78,35 @@ const AdminPanel = ({ show, handleClose }) => {
   };
 
   const clearAllData = async () => {
-    if (window.confirm('Are you sure you want to clear all registration data from both GitHub and local storage? This action cannot be undone.')) {
+    if (window.confirm('Are you sure you want to clear all registration data? This action cannot be undone.')) {
       try {
-        // Clear GitHub data by saving empty array
-        // Try to clear GitHub storage
-        try {
-          const { saveToGitHub } = await import('../utils/githubStorage');
-          await saveToGitHub('registrations.json', []);
-          console.log('GitHub storage cleared successfully');
-        } catch (error) {
-          console.warn('Failed to clear GitHub storage:', error.message);
+        // Clear S3 storage by saving empty array
+        const { saveToS3 } = await import('../utils/awsS3Storage');
+        const result = await saveToS3('registrations.json', []);
+        
+        if (result.success) {
+          console.log('S3 storage cleared successfully');
+        } else {
+          console.warn('S3 clear failed, continuing with local clear');
         }
+        
+        // Clear localStorage
+        localStorage.removeItem('khplRegistrations');
+        
+        // Update UI
+        setRegistrations([]);
+        setLastUpdated(new Date());
+        
+        alert('All registration data has been cleared successfully!');
       } catch (error) {
-        console.error('Failed to clear GitHub data:', error);
+        console.error('Failed to clear data:', error);
+        
+        // Clear at least localStorage as fallback
+        localStorage.removeItem('khplRegistrations');
+        setRegistrations([]);
+        
+        alert('Data cleared from local storage. S3 clear may have failed.');
       }
-      
-      // Clear localStorage
-      localStorage.removeItem('khplRegistrations');
-      setRegistrations([]);
     }
   };
 
@@ -105,13 +133,17 @@ const AdminPanel = ({ show, handleClose }) => {
       
       setRegistrations(updatedRegistrations);
       
-      // Try to save to GitHub
+      // Try to save to S3
       try {
-        const { saveToGitHub } = await import('../utils/githubStorage');
-        await saveToGitHub('registrations.json', updatedRegistrations);
-        console.log('Payment status updated in GitHub successfully');
+        const { saveToS3 } = await import('../utils/awsS3Storage');
+        const result = await saveToS3('registrations.json', updatedRegistrations);
+        if (result.success) {
+          console.log('Payment status updated in S3 successfully');
+        } else {
+          console.warn('S3 update failed for payment status');
+        }
       } catch (error) {
-        console.warn('Failed to update GitHub storage:', error.message);
+        console.warn('Failed to update S3 storage:', error.message);
       }
       
       // Update localStorage as backup
@@ -126,27 +158,33 @@ const AdminPanel = ({ show, handleClose }) => {
   const deleteRegistration = async (registrationId, userName) => {
     if (window.confirm(`Are you sure you want to delete registration for ${userName}? This action cannot be undone.`)) {
       try {
+        // Remove registration without reindexing (preserve original IDs)
         const updatedRegistrations = registrations.filter(reg => reg.id !== registrationId);
         
-        // Re-index the remaining registrations
-        const reIndexedRegistrations = updatedRegistrations.map((reg, index) => ({
-          ...reg,
-          id: index + 1
-        }));
+        // Update UI immediately
+        setRegistrations(updatedRegistrations);
         
-        setRegistrations(reIndexedRegistrations);
-        
-        // Try to save to GitHub
+        // Try to save to S3
         try {
-          const { saveToGitHub } = await import('../utils/githubStorage');
-          await saveToGitHub('registrations.json', reIndexedRegistrations);
-          console.log('Registration deleted from GitHub successfully');
+          const { saveToS3 } = await import('../utils/awsS3Storage');
+          const result = await saveToS3('registrations.json', updatedRegistrations);
+          
+          if (result.success) {
+            console.log('Registration deleted from S3 successfully');
+          } else {
+            console.warn('S3 update after deletion failed');
+          }
         } catch (error) {
-          console.warn('Failed to update GitHub storage after deletion:', error.message);
+          console.warn('Failed to update S3 storage after deletion:', error.message);
         }
         
         // Update localStorage as backup
-        localStorage.setItem('khplRegistrations', JSON.stringify(reIndexedRegistrations));
+        localStorage.setItem('khplRegistrations', JSON.stringify(updatedRegistrations));
+        
+        // Update timestamp
+        setLastUpdated(new Date());
+        
+        alert(`Registration for ${userName} has been deleted successfully!`);
         
       } catch (error) {
         console.error('Failed to delete registration:', error);
@@ -193,10 +231,20 @@ const AdminPanel = ({ show, handleClose }) => {
               variant="info" 
               size="sm" 
               className="me-2"
-              onClick={() => {loadRegistrations(); setLastUpdated(new Date());}}
+              disabled={isLoading}
+              onClick={async () => {
+                try {
+                  console.log('Refreshing registrations...');
+                  await loadRegistrations();
+                  console.log('Registrations refreshed successfully');
+                } catch (error) {
+                  console.error('Failed to refresh registrations:', error);
+                  alert('Failed to refresh data. Please try again.');
+                }
+              }}
             >
-              <i className="fas fa-sync me-1"></i>
-              Refresh
+              <i className={`fas ${isLoading ? 'fa-spinner fa-spin' : 'fa-sync'} me-1`}></i>
+              {isLoading ? 'Loading...' : 'Refresh'}
             </Button>
             <Button 
               variant="success" 
@@ -223,7 +271,7 @@ const AdminPanel = ({ show, handleClose }) => {
         <div className="alert alert-info mb-3">
           <i className="fas fa-info-circle me-2"></i>
           <strong>Admin Actions:</strong> Use the action buttons to update payment status or delete registrations. 
-          Changes are automatically saved to GitHub and localStorage.
+          Changes are automatically saved to cloud storage and localStorage.
           <Button 
             variant="outline-info" 
             size="sm" 

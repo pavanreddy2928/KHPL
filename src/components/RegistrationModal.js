@@ -162,7 +162,7 @@ const RegistrationModal = ({ show, handleClose }) => {
           paymentStatus: 'SUCCESS'
         });
         
-        setAlertMessage(`Payment successful! Registration #${newRecord.id} completed and saved to GitHub. Transaction ID: ${paymentResult.transactionId}`);
+        setAlertMessage(`Payment successful! Registration #${newRecord.id} completed and saved successfully. Transaction ID: ${paymentResult.transactionId}`);
         setAlertVariant('success');
         setShowAlert(true);
         
@@ -189,7 +189,7 @@ const RegistrationModal = ({ show, handleClose }) => {
         paymentStatus: 'FAILED'
       });
       
-      setAlertMessage(`Payment failed: ${error.message}. Registration saved to GitHub with pending payment status.`);
+      setAlertMessage(`Payment failed: ${error.message}. Registration saved with pending payment status.`);
       setAlertVariant('danger');
       setShowAlert(true);
     } finally {

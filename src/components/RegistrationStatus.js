@@ -78,6 +78,10 @@ const RegistrationStatus = () => {
 
       console.log('Total registrations to search:', registrations.length);
       console.log('Searching for:', searchData.searchType, '=', searchData.searchValue);
+      
+      // Debug: Show all available phone numbers and aadhaar numbers
+      console.log('Available phone numbers:', registrations.map(r => r.phoneNumber || r.phone).filter(Boolean));
+      console.log('Available aadhaar numbers:', registrations.map(r => r.aadhaarNumber || r.aadhaar).filter(Boolean));
 
       // Search for registration (fix field name mapping)
       const foundRegistration = registrations.find(reg => {
