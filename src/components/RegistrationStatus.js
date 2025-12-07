@@ -59,8 +59,8 @@ const RegistrationStatus = () => {
           id: 1,
           name: 'Test Player',
           email: 'test@example.com',
-          phone: '9876543210',
-          aadhaar: '123456789012',
+          phoneNumber: '9876543210',
+          aadhaarNumber: '123456789012',
           playerType: 'Batsman',
           jerseySize: 'M',
           amount: 500,
@@ -73,20 +73,22 @@ const RegistrationStatus = () => {
         registrations = [testRegistration];
         // Save test data to localStorage
         localStorage.setItem('khplRegistrations', JSON.stringify(registrations));
-        console.log('Test registration created with phone: 9876543210 and aadhaar: 123456789012');
+        console.log('Test registration created with phoneNumber: 9876543210 and aadhaarNumber: 123456789012');
       }
 
       console.log('Total registrations to search:', registrations.length);
       console.log('Searching for:', searchData.searchType, '=', searchData.searchValue);
 
-      // Search for registration
+      // Search for registration (fix field name mapping)
       const foundRegistration = registrations.find(reg => {
         if (searchData.searchType === 'phone') {
-          console.log('Comparing phone:', reg.phone, 'with', searchData.searchValue);
-          return reg.phone === searchData.searchValue;
+          const regPhone = reg.phoneNumber || reg.phone; // Handle both field names
+          console.log('Comparing phone:', regPhone, 'with', searchData.searchValue);
+          return regPhone === searchData.searchValue;
         } else {
-          console.log('Comparing aadhaar:', reg.aadhaar, 'with', searchData.searchValue);
-          return reg.aadhaar === searchData.searchValue;
+          const regAadhaar = reg.aadhaarNumber || reg.aadhaar; // Handle both field names
+          console.log('Comparing aadhaar:', regAadhaar, 'with', searchData.searchValue);
+          return regAadhaar === searchData.searchValue;
         }
       });
 
@@ -232,12 +234,12 @@ const RegistrationStatus = () => {
                     
                     <div className="mb-3">
                       <strong className="text-muted">Phone:</strong>
-                      <div className="fs-6">{searchResult.phone}</div>
+                      <div className="fs-6">{searchResult.phoneNumber || searchResult.phone}</div>
                     </div>
                     
                     <div className="mb-3">
                       <strong className="text-muted">Aadhaar:</strong>
-                      <div className="fs-6">{searchResult.aadhaar}</div>
+                      <div className="fs-6">{searchResult.aadhaarNumber || searchResult.aadhaar}</div>
                     </div>
                   </Col>
                   
