@@ -53,12 +53,8 @@ const RegistrationModal = ({ show, handleClose }) => {
 
   const addToInternalSheet = async (data, paymentInfo = {}) => {
     try {
-      // Get existing data from S3 or create new array
-      const existingData = await loadRegistrationData() || [];
-      
-      // Add new registration with timestamp and ID
-      const newRegistration = {
-        id: existingData.length + 1,
+      // Create registration data with enhanced details
+      const registrationData = {
         ...data,
         registrationDate: new Date().toLocaleString(),
         imageName: data.image ? data.image.name : 'No image',
@@ -69,46 +65,42 @@ const RegistrationModal = ({ show, handleClose }) => {
         paymentStatus: paymentInfo.paymentStatus || 'PENDING'
       };
       
-      existingData.push(newRegistration);
+      // Use the centralized save function (it handles ID generation and storage)
+      const result = await saveRegistrationData(registrationData);
       
-      // Try to save to S3 (with localStorage fallback)
-      try {
-        const result = await saveRegistrationData(newRegistration);
-        if (result.success) {
-          console.log(`Registration data saved to ${result.storage} successfully`);
-          return result.data;
-        } else {
-          console.log('S3 save failed:', result.error);
-        }
-      } catch (error) {
-        console.warn('S3 save failed, using localStorage fallback:', error.message);
+      if (result.success) {
+        console.log(`Registration data saved to ${result.storage} successfully`);
+        return result.data;
+      } else {
+        console.error('Registration save failed:', result.error);
+        throw new Error(result.error || 'Failed to save registration');
       }
-      
-      // Save to localStorage (primary storage)
-      localStorage.setItem('khplRegistrations', JSON.stringify(existingData));
-      
-      return newRegistration;
     } catch (error) {
-      console.error('GitHub save error, falling back to localStorage:', error);
+      console.error('Registration save error:', error);
       
-      // Fallback to localStorage if GitHub fails
-      const existingData = JSON.parse(localStorage.getItem('khplRegistrations') || '[]');
-      const newRegistration = {
-        id: existingData.length + 1,
-        ...data,
-        registrationDate: new Date().toLocaleString(),
-        imageName: data.image ? data.image.name : 'No image',
-        paymentScreenshotName: data.paymentScreenshot ? data.paymentScreenshot.name : null,
-        status: paymentInfo.status || 'Payment Pending',
-        paymentId: paymentInfo.transactionId || null,
-        amount: 500,
-        paymentStatus: paymentInfo.paymentStatus || 'PENDING'
-      };
-      
-      existingData.push(newRegistration);
-      localStorage.setItem('khplRegistrations', JSON.stringify(existingData));
-      
-      return newRegistration;
+      // Final fallback to localStorage only
+      try {
+        const existingData = JSON.parse(localStorage.getItem('khplRegistrations') || '[]');
+        const newRegistration = {
+          id: Date.now(), // Use timestamp for unique ID
+          ...data,
+          registrationDate: new Date().toLocaleString(),
+          imageName: data.image ? data.image.name : 'No image',
+          paymentScreenshotName: data.paymentScreenshot ? data.paymentScreenshot.name : null,
+          status: paymentInfo.status || 'Payment Pending',
+          paymentId: paymentInfo.transactionId || null,
+          amount: 500,
+          paymentStatus: paymentInfo.paymentStatus || 'PENDING'
+        };
+        
+        existingData.push(newRegistration);
+        localStorage.setItem('khplRegistrations', JSON.stringify(existingData));
+        
+        return newRegistration;
+      } catch (fallbackError) {
+        console.error('Final fallback failed:', fallbackError);
+        throw fallbackError;
+      }
     }
   };
 

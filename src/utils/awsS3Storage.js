@@ -149,16 +149,21 @@ export const saveRegistrationData = async (data) => {
   try {
     // Get existing data from S3 or create new array
     const existingData = await loadFromS3('registrations.json') || [];
+    console.log(`📊 Current registration count: ${existingData.length}`);
+    
+    // Generate unique ID based on timestamp and random string
+    const uniqueId = data.id || `KHPL_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     // Add new registration
     const newRegistration = {
       ...data,
-      id: existingData.length + 1,
+      id: uniqueId,
       timestamp: new Date().toISOString(),
       source: 'khpl-web-app'
     };
     
     existingData.push(newRegistration);
+    console.log(`✅ Adding new registration with ID: ${uniqueId}, Total records: ${existingData.length}`);
     
     // Try to save to S3
     const s3Result = await saveToS3('registrations.json', existingData);
@@ -174,7 +179,7 @@ export const saveRegistrationData = async (data) => {
       const localData = JSON.parse(localStorage.getItem('khplRegistrations') || '[]');
       const localRegistration = {
         ...newRegistration,
-        id: localData.length + 1
+        id: newRegistration.id || `KHPL_LOCAL_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       };
       localData.push(localRegistration);
       localStorage.setItem('khplRegistrations', JSON.stringify(localData));
