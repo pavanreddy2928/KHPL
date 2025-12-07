@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Table, Badge, Row, Col, Image, Tabs, Tab } from 'react-bootstrap';
 import * as XLSX from 'xlsx';
-import { loadFromGitHub } from '../utils/githubStorage';
+import { loadRegistrationData, saveRegistrationData, verifyS3Access } from '../utils/awsS3Storage';
 import RegistrationSheet from './RegistrationSheet';
 
 const AdminPanel = ({ show, handleClose }) => {
@@ -18,21 +18,18 @@ const AdminPanel = ({ show, handleClose }) => {
 
   const loadRegistrations = async () => {
     try {
-      // Try to load from GitHub first
-      const githubData = await loadFromGitHub('registrations.json');
-      if (githubData && Array.isArray(githubData)) {
-        setRegistrations(githubData);
-        // Update localStorage as backup
-        localStorage.setItem('khplRegistrations', JSON.stringify(githubData));
+      // Load from S3 with localStorage fallback
+      const data = await loadRegistrationData();
+      if (data && Array.isArray(data)) {
+        setRegistrations(data);
         return;
       }
     } catch (error) {
-      console.error('Failed to load from GitHub:', error);
+      console.error('Failed to load registration data:', error);
     }
     
-    // Fallback to localStorage
-    const localData = JSON.parse(localStorage.getItem('khplRegistrations') || '[]');
-    setRegistrations(localData);
+    // Final fallback to empty array
+    setRegistrations([]);
   };
 
   const exportAllToExcel = () => {
@@ -232,20 +229,19 @@ const AdminPanel = ({ show, handleClose }) => {
             className="ms-3"
             onClick={async () => {
               try {
-                const { verifyGitHubAccess } = await import('../utils/githubStorage');
-                const result = await verifyGitHubAccess();
+                const result = await verifyS3Access();
                 if (result.success) {
-                  alert(`✅ GitHub Connected: ${result.repository} (Private: ${result.private})`);
+                  alert(`✅ AWS S3 Connected: ${result.bucket} (Region: ${result.region})`);
                 } else {
-                  alert(`❌ GitHub Error: ${result.reason}${result.code ? ` (${result.code})` : ''}`);
+                  alert(`❌ S3 Error: ${result.reason}${result.code ? ` (${result.code})` : ''}`);
                 }
               } catch (error) {
                 alert(`❌ Test Failed: ${error.message}`);
               }
             }}
           >
-            <i className="fab fa-github me-1"></i>
-            Test GitHub
+            <i className="fab fa-aws me-1"></i>
+            Test S3
           </Button>
         </div>
 

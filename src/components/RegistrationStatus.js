@@ -33,31 +33,23 @@ const RegistrationStatus = () => {
     setSearchResult(null);
 
     try {
-      // Load registrations from GitHub or localStorage
-      const { loadFromGitHub } = await import('../utils/githubStorage');
+      // Load registrations from S3 or localStorage
+      const { loadRegistrationData } = await import('../utils/awsS3Storage');
       let registrations = [];
       
       console.log('Starting registration search...');
       
       try {
-        const githubData = await loadFromGitHub('registrations.json');
-        if (githubData && Array.isArray(githubData)) {
-          registrations = githubData;
-          console.log('Loaded from GitHub:', registrations.length, 'registrations');
-        } else {
-          throw new Error('No data from GitHub');
-        }
-      } catch (error) {
-        console.log('GitHub load failed, trying localStorage:', error.message);
-        // Fallback to localStorage if GitHub fails
-        const localData = localStorage.getItem('khplRegistrations');
-        if (localData) {
-          registrations = JSON.parse(localData);
-          console.log('Loaded from localStorage:', registrations.length, 'registrations');
+        registrations = await loadRegistrationData();
+        if (registrations && Array.isArray(registrations)) {
+          console.log('Loaded from storage:', registrations.length, 'registrations');
         } else {
           registrations = [];
-          console.log('No data found in localStorage either');
+          console.log('No registration data found');
         }
+      } catch (error) {
+        console.log('Storage load failed:', error.message);
+        registrations = [];
       }
 
       // If no registrations found, create a test registration for demonstration

@@ -11,10 +11,13 @@ const Hero = () => {
           <Col>
             <div className="mb-4">
               <img
-                src="/khpl.jpeg"
+                src={process.env.PUBLIC_URL + "/khpl.jpeg"}
                 alt="KHPL Logo"
                 className="rounded-circle border border-white border-3"
                 style={{ width: '150px', height: '150px' }}
+                onError={(e) => {
+                  e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23667eea'/%3E%3Ctext x='75' y='85' text-anchor='middle' fill='white' font-size='20' font-weight='bold'%3EKHPL%3C/text%3E%3C/svg%3E";
+                }}
               />
             </div>
             <h1 className="display-4 fw-bold mb-3">

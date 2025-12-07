@@ -21,15 +21,26 @@ git push -u origin main
 6. **Configure build**:
    - Branch: `main` 
    - Build settings: Auto-detected (React)
-7. **Add Environment Variables**:
+7. **Add Environment Variables** (Choose AWS S3 OR GitHub):
+   
+   **Option A: AWS S3 Storage (Recommended - 5GB Free)**
    ```
-   REACT_APP_GITHUB_TOKEN = [Your GitHub Personal Access Token]
-   REACT_APP_GITHUB_STORAGE = true
-   REACT_APP_GITHUB_OWNER = pavanreddy2928
-   REACT_APP_GITHUB_REPO = KHPL
+   REACT_APP_S3_STORAGE=true
+   REACT_APP_AWS_REGION=us-east-1
+   REACT_APP_S3_BUCKET_NAME=khpl-registration-data
+   REACT_APP_AWS_ACCESS_KEY_ID=[Your AWS Access Key]
+   REACT_APP_AWS_SECRET_ACCESS_KEY=[Your AWS Secret Key]
    ```
    
-   > **Important**: Replace `[Your GitHub Personal Access Token]` with your actual token from the GITHUB_SETUP.md guide
+   **Option B: GitHub Storage**
+   ```
+   REACT_APP_GITHUB_TOKEN=[Your GitHub Personal Access Token]
+   REACT_APP_GITHUB_STORAGE=true
+   REACT_APP_GITHUB_OWNER=pavanreddy2928
+   REACT_APP_GITHUB_REPO=KHPL
+   ```
+   
+   > **Setup Guide**: See `AWS_S3_SETUP.md` for AWS setup or `GITHUB_SETUP.md` for GitHub setup
 8. **Click "Save and Deploy"**
 
 ### Step 3: Get Your URL

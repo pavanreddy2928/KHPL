@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, Button, Form, Row, Col, Alert, Spinner } from 'react-bootstrap';
-import { saveToGitHub, loadFromGitHub } from '../utils/githubStorage';
+import { saveRegistrationData, loadRegistrationData } from '../utils/awsS3Storage';
 
 const RegistrationModal = ({ show, handleClose }) => {
   const [formData, setFormData] = useState({
@@ -53,8 +53,8 @@ const RegistrationModal = ({ show, handleClose }) => {
 
   const addToInternalSheet = async (data, paymentInfo = {}) => {
     try {
-      // Get existing data from GitHub or create new array
-      const existingData = await loadFromGitHub('registrations.json') || [];
+      // Get existing data from S3 or create new array
+      const existingData = await loadRegistrationData() || [];
       
       // Add new registration with timestamp and ID
       const newRegistration = {
@@ -71,16 +71,17 @@ const RegistrationModal = ({ show, handleClose }) => {
       
       existingData.push(newRegistration);
       
-      // Try to save to GitHub (optional)
+      // Try to save to S3 (with localStorage fallback)
       try {
-        const saved = await saveToGitHub('registrations.json', existingData);
-        if (saved && saved.success) {
-          console.log('Registration data saved to GitHub successfully');
+        const result = await saveRegistrationData(newRegistration);
+        if (result.success) {
+          console.log(`Registration data saved to ${result.storage} successfully`);
+          return result.data;
         } else {
-          console.log('GitHub save skipped or failed:', saved?.reason || 'Unknown reason');
+          console.log('S3 save failed:', result.error);
         }
       } catch (error) {
-        console.warn('GitHub save failed, continuing with localStorage:', error.message);
+        console.warn('S3 save failed, using localStorage fallback:', error.message);
       }
       
       // Save to localStorage (primary storage)
@@ -477,10 +478,14 @@ const RegistrationModal = ({ show, handleClose }) => {
               </h6>
               <div className="qr-code-container bg-white border rounded p-3 mb-3 mx-auto" style={{width: '220px'}}>
                 <img 
-                  src="/KHPL-QR-CODE.jpeg" 
-                  alt="KHPL Logo - QR Code Coming Soon" 
+                  src={process.env.PUBLIC_URL + "/KHPL-QR-CODE.jpeg"} 
+                  alt="KHPL QR Code for Payment" 
                   className="img-fluid rounded"
                   style={{width: '100%', height: 'auto', maxHeight: '150px', objectFit: 'contain'}}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextElementSibling.style.display = 'flex';
+                  }}
                 />
                 <div className="qr-placeholder bg-light border rounded align-items-center justify-content-center" style={{height: '180px', display: 'none'}}>
                   <div className="text-center">
