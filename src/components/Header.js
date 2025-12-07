@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Navbar, Nav, Container } from 'react-bootstrap';
 import AdminPanel from './AdminPanel';
 import AdminLogin from './AdminLogin';
-import khplLogo from '../assets/khpl.jpeg';
 
 const Header = () => {
   const [showAdminPanel, setShowAdminPanel] = useState(false);
@@ -70,11 +69,12 @@ const Header = () => {
       <Container>
         <Navbar.Brand href="#home" className="fw-bold">
           <img
-            src={khplLogo}
+            src="https://khpl-registration-data-unique-name.s3.ap-south-1.amazonaws.com/images/khpl.jpeg"
             width="40"
             height="40"
             className="d-inline-block align-top me-2 rounded-circle"
             alt="KHPL Logo"
+            crossOrigin="anonymous"
           />
           KHPL
         </Navbar.Brand>

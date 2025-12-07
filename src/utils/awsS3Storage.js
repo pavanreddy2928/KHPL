@@ -6,7 +6,7 @@ import { S3Client, PutObjectCommand, GetObjectCommand, HeadObjectCommand } from 
 // AWS S3 Configuration
 const S3_CONFIG = {
   region: process.env.REACT_APP_AWS_REGION || 'us-east-1', // Change to your preferred region
-  bucketName: process.env.REACT_APP_S3_BUCKET_NAME || 'khpl-registration-data',
+  bucketName: process.env.REACT_APP_S3_BUCKET_NAME || 'khpl-registration-data-unique-name',
   accessKeyId: process.env.REACT_APP_AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.REACT_APP_AWS_SECRET_ACCESS_KEY,
   enabled: process.env.REACT_APP_S3_STORAGE === 'true'

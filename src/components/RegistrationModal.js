@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, Button, Form, Row, Col, Alert, Spinner } from 'react-bootstrap';
 import { saveRegistrationData, loadRegistrationData } from '../utils/awsS3Storage';
-import qrCode from '../assets/KHPL-QR-CODE.jpeg';
 
 const RegistrationModal = ({ show, handleClose }) => {
   const [formData, setFormData] = useState({
@@ -479,10 +478,11 @@ const RegistrationModal = ({ show, handleClose }) => {
               </h6>
               <div className="qr-code-container bg-white border rounded p-3 mb-3 mx-auto" style={{width: '220px'}}>
                 <img 
-                  src={qrCode} 
+                  src="https://khpl-registration-data-unique-name.s3.ap-south-1.amazonaws.com/images/KHPL-QR-CODE.jpeg" 
                   alt="KHPL QR Code for Payment" 
                   className="img-fluid rounded"
                   style={{width: '100%', height: 'auto', maxHeight: '150px', objectFit: 'contain'}}
+                  crossOrigin="anonymous"
                 />
                 <div className="qr-placeholder bg-light border rounded align-items-center justify-content-center" style={{height: '180px', display: 'none'}}>
                   <div className="text-center">
