@@ -21,7 +21,7 @@ const Hero = () => {
           <Col>
             <div className="mb-4">
               <img
-                src={logoUrl || (process.env.PUBLIC_URL + "/khpl.jpeg")}
+                src={logoUrl || "/khpl.jpeg"}
                 alt="KHPL Logo"
                 className="rounded-circle border border-white border-3"
                 style={{ width: '150px', height: '150px' }}

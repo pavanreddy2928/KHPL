@@ -41,6 +41,18 @@ const imageCache = new Map();
 
 // Load image from S3
 export const loadImageFromS3 = async (imageName) => {
+  // TEMPORARY: Disable S3 loading due to CORS issues, use local images only
+  console.log(`🔄 Loading image from public folder: ${imageName}`);
+  
+  // Use proper URL construction for production and development
+  const publicUrl = process.env.PUBLIC_URL || '';
+  const localUrl = `${publicUrl}/${imageName}`;
+  
+  imageCache.set(imageName, localUrl);
+  return localUrl;
+
+  // TODO: Re-enable S3 loading after CORS is properly configured
+  /* 
   // If S3 not configured, return fallback path
   if (!S3_CONFIG.enabled || !S3_CONFIG.accessKeyId) {
     console.log(`S3 not configured, using fallback for: ${imageName}`);
@@ -52,29 +64,13 @@ export const loadImageFromS3 = async (imageName) => {
     return imageCache.get(imageName);
   }
 
-  // Try direct S3 URL first (public images with proper CORS)
+  // Use direct S3 URL (only if CORS is configured)
   const publicS3Url = `https://${S3_CONFIG.bucketName}.s3.amazonaws.com/images/${imageName}`;
   
-  try {
-    // Test if image is publicly accessible with CORS
-    const response = await fetch(publicS3Url, { 
-      method: 'HEAD',
-      mode: 'cors'
-    });
-    if (response.ok) {
-      console.log(`✅ Using public S3 URL for: ${imageName}`);
-      imageCache.set(imageName, publicS3Url);
-      return publicS3Url;
-    }
-  } catch (error) {
-    console.warn(`Public S3 URL failed for ${imageName} (likely CORS issue), using fallback...`);
-  }
-
-  // If public URL fails (CORS issue), fallback to local images
-  console.log(`📱 Falling back to local images for: ${imageName}`);
-  const fallbackUrl = process.env.PUBLIC_URL + `/${imageName}`;
-  imageCache.set(imageName, fallbackUrl);
-  return fallbackUrl;
+  console.log(`✅ Using S3 URL for: ${imageName}`);
+  imageCache.set(imageName, publicS3Url);
+  return publicS3Url;
+  */
 };
 
 // Get S3 image URL (direct URL without loading)
