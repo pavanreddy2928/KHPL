@@ -1,14 +1,27 @@
 const fs = require('fs');
 const path = require('path');
 
-// Ensure static/images directory exists in build
-const staticImagesDir = path.join(__dirname, '../build/static/images');
+const buildDir = path.join(__dirname, '../build');
+const imagesToCopy = ['khpl.jpeg', 'KHPL-QR-CODE.jpeg'];
+
+// Copy images to build root directory (for /image.jpg paths)
+imagesToCopy.forEach(imageName => {
+  const sourcePath = path.join(__dirname, '../public', imageName);
+  const destPath = path.join(buildDir, imageName);
+  
+  if (fs.existsSync(sourcePath)) {
+    fs.copyFileSync(sourcePath, destPath);
+    console.log(`✅ Copied ${imageName} to build root`);
+  } else {
+    console.warn(`⚠️  Image not found: ${sourcePath}`);
+  }
+});
+
+// Also copy to static/images directory (as backup)
+const staticImagesDir = path.join(buildDir, 'static/images');
 if (!fs.existsSync(staticImagesDir)) {
   fs.mkdirSync(staticImagesDir, { recursive: true });
 }
-
-// Copy images from public to build/static/images
-const imagesToCopy = ['khpl.jpeg', 'KHPL-QR-CODE.jpeg'];
 
 imagesToCopy.forEach(imageName => {
   const sourcePath = path.join(__dirname, '../public', imageName);
