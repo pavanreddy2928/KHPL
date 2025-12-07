@@ -4,7 +4,7 @@
   "description": "Karnataka Hardball Premier League React App",
   "private": true,
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.450.0",
+    "@aws-sdk/client-s3": "^3.946.0",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
     "@testing-library/user-event": "^13.5.0",

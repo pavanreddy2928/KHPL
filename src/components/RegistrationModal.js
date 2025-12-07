@@ -429,7 +429,7 @@ const RegistrationModal = ({ show, handleClose }) => {
               <li><strong>Registration Fee: ₹500 (including GST)</strong></li>
               <li>Payment Method: UPI Gateway</li>
               <li>Tournament Location: Karnataka</li>
-              <li>Venue: Atal Bihari Vajpayee Ground, Gunjuru</li>
+              <li>Venue: Gunjuru, Bengaluru</li>
               <li>Registration Status: Open</li>
             </ul>
             <div className="mt-2 p-2 bg-warning bg-opacity-25 rounded">

@@ -278,7 +278,7 @@ const RegistrationStatus = () => {
                     <div className="col-md-8">
                       <h6 className="fw-bold mb-2">Tournament Information:</h6>
                       <ul className="mb-0 small">
-                        <li>Venue: Atal Bihari Vajpayee Ground, Gunjuru</li>
+                        <li>Venue: Gunjuru, Bengaluru</li>
                         <li>Tournament: Karnataka Hardball Premier League (KHPL)</li>
                         <li>Registration Status: {searchResult.status === 'Active' ? 'Confirmed' : 'Pending Verification'}</li>
                       </ul>

@@ -20,14 +20,7 @@ const Registration = () => {
                   #streetheroestostadiumsuperstars
                 </Badge>
                 <h3 className="fw-bold text-dark mb-3">Matches at Gunjur Bengaluru</h3>
-                <h4 className="fw-bold text-dark mb-3">Atal Bihari Vajpayee Ground, Gunjuru</h4>
-                <div className="stadium-image mb-3">
-                  <img
-                    src="/api/placeholder/200/120"
-                    alt="Atal Bihari Vajpayee Ground, Gunjuru"
-                    className="img-fluid rounded"
-                  />
-                </div>
+                
                 <div className="india-map">
                   <img
                     src="/api/placeholder/100/120"
