@@ -320,6 +320,7 @@ const AdminPanel = ({ show, handleClose }) => {
                   <th>Payment Status</th>
                   <th>Registration Date</th>
                   <th>Status</th>
+                  <th>Attachments</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -356,6 +357,12 @@ const AdminPanel = ({ show, handleClose }) => {
                       </Badge>
                     </td>
                     <td>
+                      <div className="small">
+                        <div>📷 {reg.userPhoto ? '✅' : '❌'}</div>
+                        <div>💳 {reg.paymentScreenshot ? '✅' : '❌'}</div>
+                      </div>
+                    </td>
+                    <td>
                       <div className="d-flex gap-1 flex-wrap">
                         {/* Payment Status Update Buttons */}
                         {reg.paymentStatus !== 'SUCCESS' && (
@@ -389,15 +396,14 @@ const AdminPanel = ({ show, handleClose }) => {
                         )}
                         
                         {/* View Attachments Button */}
-                        {(reg.userPhoto || reg.paymentScreenshot) && (
-                          <Button 
-                            size="sm" 
-                            variant="info" 
-                            onClick={() => viewAttachments(reg)}
-                          >
-                            View Attachments
-                          </Button>
-                        )}
+                        <Button 
+                          size="sm" 
+                          variant={reg.userPhoto || reg.paymentScreenshot ? "info" : "outline-secondary"}
+                          onClick={() => viewAttachments(reg)}
+                          title={`User Photo: ${!!reg.userPhoto ? '✓' : '✗'}, Payment Screenshot: ${!!reg.paymentScreenshot ? '✓' : '✗'}`}
+                        >
+                          View Attachments
+                        </Button>
                         
                         {/* Delete Button */}
                         <Button 
