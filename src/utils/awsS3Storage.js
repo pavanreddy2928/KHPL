@@ -17,7 +17,6 @@ let s3Client = null;
 
 const initializeS3Client = () => {
   if (!S3_CONFIG.enabled || !S3_CONFIG.accessKeyId || !S3_CONFIG.secretAccessKey) {
-    console.log('AWS S3 storage not configured, using localStorage only');
     return null;
   }
 
@@ -31,7 +30,6 @@ const initializeS3Client = () => {
     });
     return s3Client;
   } catch (error) {
-    console.error('Failed to initialize S3 client:', error);
     return null;
   }
 };
@@ -85,10 +83,9 @@ export const saveToS3 = async (filename, data) => {
     });
 
     await client.send(command);
-    console.log('Successfully saved to S3:', filename);
+    // Successfully saved to S3
     return { success: true };
   } catch (error) {
-    console.error('S3 save error:', error);
     
     if (error.name === 'NoSuchBucket') {
       console.error('❌ S3 Bucket Not Found');
@@ -125,11 +122,11 @@ export const loadFromS3 = async (filename) => {
     const response = await client.send(command);
     const body = await response.Body.transformToString();
     
-    console.log('Successfully loaded from S3:', filename);
+    // Successfully loaded from S3
     return JSON.parse(body);
   } catch (error) {
     if (error.name === 'NoSuchKey') {
-      console.log('File not found on S3 (normal for first registration):', filename);
+      // File not found on S3 (normal for first registration)
       return null;
     } else if (error.name === 'NoSuchBucket') {
       console.error('❌ S3 Bucket Not Found:', S3_CONFIG.bucketName);
@@ -149,7 +146,7 @@ export const saveRegistrationData = async (data) => {
   try {
     // Get existing data from S3 or create new array
     const existingData = await loadFromS3('registrations.json') || [];
-    console.log(`📊 Current registration count: ${existingData.length}`);
+    // Current registration count logged
     
     // Generate unique ID based on timestamp and random string
     const uniqueId = data.id || `KHPL_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -163,18 +160,17 @@ export const saveRegistrationData = async (data) => {
     };
     
     existingData.push(newRegistration);
-    console.log(`✅ Adding new registration with ID: ${uniqueId}, Total records: ${existingData.length}`);
+    // Adding new registration with unique ID
     
     // Try to save to S3
     const s3Result = await saveToS3('registrations.json', existingData);
     
     if (s3Result.success) {
-      console.log('✅ Registration saved to AWS S3 successfully');
       // Also save to localStorage as backup
       localStorage.setItem('khplRegistrations', JSON.stringify(existingData));
       return { success: true, storage: 'S3', data: newRegistration };
     } else {
-      console.log('⚠️ S3 save failed, using localStorage fallback');
+      // S3 save failed, using localStorage fallback
       // Fallback to localStorage
       const localData = JSON.parse(localStorage.getItem('khplRegistrations') || '[]');
       const localRegistration = {
@@ -186,7 +182,6 @@ export const saveRegistrationData = async (data) => {
       return { success: true, storage: 'localStorage', data: localRegistration };
     }
   } catch (error) {
-    console.error('Registration save error:', error);
     return { success: false, error: error.message };
   }
 };
@@ -198,18 +193,17 @@ export const loadRegistrationData = async () => {
     const s3Data = await loadFromS3('registrations.json');
     
     if (s3Data && Array.isArray(s3Data)) {
-      console.log('✅ Loaded registration data from AWS S3');
+      // Loaded registration data from AWS S3
       // Update localStorage as backup
       localStorage.setItem('khplRegistrations', JSON.stringify(s3Data));
       return s3Data;
     }
     
     // Fallback to localStorage
-    console.log('📱 Loading registration data from localStorage (S3 fallback)');
+    // Loading registration data from localStorage (S3 fallback)
     const localData = JSON.parse(localStorage.getItem('khplRegistrations') || '[]');
     return localData;
   } catch (error) {
-    console.error('Registration load error:', error);
     // Final fallback to localStorage
     const localData = JSON.parse(localStorage.getItem('khplRegistrations') || '[]');
     return localData;

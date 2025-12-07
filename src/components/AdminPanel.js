@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Table, Badge, Row, Col, Image, Tabs, Tab } from 'react-bootstrap';
 import * as XLSX from 'xlsx';
-import { loadRegistrationData, saveRegistrationData, verifyS3Access } from '../utils/awsS3Storage';
+import { loadRegistrationData, verifyS3Access } from '../utils/awsS3Storage';
 import RegistrationSheet from './RegistrationSheet';
 import ImageUploadManager from './ImageUploadManager';
 
@@ -21,28 +21,21 @@ const AdminPanel = ({ show, handleClose }) => {
   const loadRegistrations = async () => {
     setIsLoading(true);
     try {
-      console.log('Loading registration data...');
-      
       // Load from S3 with localStorage fallback
       const data = await loadRegistrationData();
       
       if (data && Array.isArray(data)) {
-        console.log(`Loaded ${data.length} registrations`);
         setRegistrations(data);
         setLastUpdated(new Date());
       } else {
-        console.log('No registration data found');
         setRegistrations([]);
       }
     } catch (error) {
-      console.error('Failed to load registration data:', error);
       // Try localStorage as final fallback
       try {
         const localData = JSON.parse(localStorage.getItem('khplRegistrations') || '[]');
-        console.log(`Loaded ${localData.length} registrations from localStorage fallback`);
         setRegistrations(localData);
       } catch (localError) {
-        console.error('localStorage fallback also failed:', localError);
         setRegistrations([]);
       }
     } finally {
@@ -56,25 +49,48 @@ const AdminPanel = ({ show, handleClose }) => {
       return;
     }
 
-    const ws = XLSX.utils.json_to_sheet(registrations);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'All KHPL Registrations');
-    
-    // Auto-adjust column widths
-    const colWidths = [
-      { wch: 20 }, // Name
-      { wch: 30 }, // Email  
-      { wch: 15 }, // Phone
-      { wch: 15 }, // Aadhaar
-      { wch: 15 }, // Player Type
-      { wch: 12 }, // Jersey Size
-      { wch: 20 }, // Registration Date
-      { wch: 15 }  // Image Name
-    ];
-    ws['!cols'] = colWidths;
-    
-    const fileName = `All_KHPL_Registrations_${new Date().toISOString().split('T')[0]}.xlsx`;
-    XLSX.writeFile(wb, fileName);
+    try {
+      // Prepare data for Excel export
+      const exportData = registrations.map(reg => ({
+        'Registration ID': reg.id || 'N/A',
+        'Name': reg.name || '',
+        'Email': reg.email || '',
+        'Phone': reg.phoneNumber || reg.phone || '',
+        'Aadhaar': reg.aadhaarNumber || reg.aadhaar || '',
+        'Player Type': reg.playerType || '',
+        'Jersey Size': reg.jerseySize || '',
+        'Registration Date': reg.registrationDate || new Date().toLocaleDateString(),
+        'Payment Status': reg.paymentStatus || 'PENDING',
+        'Status': reg.status || 'Pending'
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'All KHPL Registrations');
+      
+      // Auto-adjust column widths
+      const colWidths = [
+        { wch: 15 }, // Registration ID
+        { wch: 20 }, // Name
+        { wch: 30 }, // Email  
+        { wch: 15 }, // Phone
+        { wch: 15 }, // Aadhaar
+        { wch: 15 }, // Player Type
+        { wch: 12 }, // Jersey Size
+        { wch: 20 }, // Registration Date
+        { wch: 15 }, // Payment Status
+        { wch: 12 }  // Status
+      ];
+      ws['!cols'] = colWidths;
+      
+      const fileName = `All_KHPL_Registrations_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      
+      // Show success message
+      alert(`Excel file exported successfully: ${fileName}`);
+    } catch (error) {
+      alert('Failed to export Excel file. Please try again.');
+    }
   };
 
   const clearAllData = async () => {
@@ -84,10 +100,8 @@ const AdminPanel = ({ show, handleClose }) => {
         const { saveToS3 } = await import('../utils/awsS3Storage');
         const result = await saveToS3('registrations.json', []);
         
-        if (result.success) {
-          console.log('S3 storage cleared successfully');
-        } else {
-          console.warn('S3 clear failed, continuing with local clear');
+        if (!result.success) {
+          // S3 clear failed, but continue with local clear
         }
         
         // Clear localStorage
@@ -99,8 +113,6 @@ const AdminPanel = ({ show, handleClose }) => {
         
         alert('All registration data has been cleared successfully!');
       } catch (error) {
-        console.error('Failed to clear data:', error);
-        
         // Clear at least localStorage as fallback
         localStorage.removeItem('khplRegistrations');
         setRegistrations([]);
@@ -111,10 +123,6 @@ const AdminPanel = ({ show, handleClose }) => {
   };
 
   const viewAttachments = (registration) => {
-    console.log('👁️ Viewing attachments for:', registration.name);
-    console.log('📸 User photo:', !!registration.userPhoto);
-    console.log('💳 Payment screenshot:', !!registration.paymentScreenshot);
-    console.log('📋 Full registration data:', registration);
     setSelectedUser(registration);
     setShowAttachmentsModal(true);
   };
@@ -141,20 +149,17 @@ const AdminPanel = ({ show, handleClose }) => {
       try {
         const { saveToS3 } = await import('../utils/awsS3Storage');
         const result = await saveToS3('registrations.json', updatedRegistrations);
-        if (result.success) {
-          console.log('Payment status updated in S3 successfully');
-        } else {
-          console.warn('S3 update failed for payment status');
+        if (!result.success) {
+          // S3 update failed for payment status
         }
       } catch (error) {
-        console.warn('Failed to update S3 storage:', error.message);
+        // Failed to update S3 storage
       }
       
       // Update localStorage as backup
       localStorage.setItem('khplRegistrations', JSON.stringify(updatedRegistrations));
       
     } catch (error) {
-      console.error('Failed to update payment status:', error);
       alert('Failed to update payment status. Please try again.');
     }
   };
@@ -173,13 +178,11 @@ const AdminPanel = ({ show, handleClose }) => {
           const { saveToS3 } = await import('../utils/awsS3Storage');
           const result = await saveToS3('registrations.json', updatedRegistrations);
           
-          if (result.success) {
-            console.log('Registration deleted from S3 successfully');
-          } else {
-            console.warn('S3 update after deletion failed');
+          if (!result.success) {
+            // S3 update after deletion failed
           }
         } catch (error) {
-          console.warn('Failed to update S3 storage after deletion:', error.message);
+          // Failed to update S3 storage after deletion
         }
         
         // Update localStorage as backup
@@ -191,7 +194,6 @@ const AdminPanel = ({ show, handleClose }) => {
         alert(`Registration for ${userName} has been deleted successfully!`);
         
       } catch (error) {
-        console.error('Failed to delete registration:', error);
         alert('Failed to delete registration. Please try again.');
       }
     }
@@ -238,11 +240,8 @@ const AdminPanel = ({ show, handleClose }) => {
               disabled={isLoading}
               onClick={async () => {
                 try {
-                  console.log('Refreshing registrations...');
                   await loadRegistrations();
-                  console.log('Registrations refreshed successfully');
                 } catch (error) {
-                  console.error('Failed to refresh registrations:', error);
                   alert('Failed to refresh data. Please try again.');
                 }
               }}

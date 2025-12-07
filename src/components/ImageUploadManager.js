@@ -2,7 +2,7 @@
 // Helps upload essential images (logo, QR code) to S3
 
 import React, { useState } from 'react';
-import { Button, Card, Form, Alert, ProgressBar } from 'react-bootstrap';
+import { Card, Form, Alert, ProgressBar } from 'react-bootstrap';
 import { uploadImageToS3 } from '../utils/s3ImageLoader';
 
 const ImageUploadManager = () => {

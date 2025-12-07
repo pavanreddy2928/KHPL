@@ -2,7 +2,7 @@
 // Loads images from S3 bucket with fallbacks
 
 import React from 'react';
-import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
 // AWS S3 Configuration for static assets
 const S3_CONFIG = {
@@ -31,7 +31,7 @@ const initializeS3Client = () => {
     });
     return s3Client;
   } catch (error) {
-    console.error('Failed to initialize S3 client for images:', error);
+    // Failed to initialize S3 client
     return null;
   }
 };
@@ -42,7 +42,7 @@ const imageCache = new Map();
 // Load image from S3
 export const loadImageFromS3 = async (imageName) => {
   // TEMPORARY: Disable S3 loading due to CORS issues, use local images only
-  console.log(`🔄 Loading image from public folder: ${imageName}`);
+  // Loading image from public folder
   
   // Use proper URL construction for production and development
   const publicUrl = process.env.PUBLIC_URL || '';
@@ -55,7 +55,7 @@ export const loadImageFromS3 = async (imageName) => {
   /* 
   // If S3 not configured, return fallback path
   if (!S3_CONFIG.enabled || !S3_CONFIG.accessKeyId) {
-    console.log(`S3 not configured, using fallback for: ${imageName}`);
+    // S3 not configured, using fallback
     return process.env.PUBLIC_URL + `/${imageName}`;
   }
 
@@ -67,7 +67,7 @@ export const loadImageFromS3 = async (imageName) => {
   // Use direct S3 URL (only if CORS is configured)
   const publicS3Url = `https://${S3_CONFIG.bucketName}.s3.amazonaws.com/images/${imageName}`;
   
-  console.log(`✅ Using S3 URL for: ${imageName}`);
+  // Using S3 URL
   imageCache.set(imageName, publicS3Url);
   return publicS3Url;
   */
@@ -88,7 +88,7 @@ export const getS3ImageUrl = (imageName) => {
 export const preloadEssentialImages = async () => {
   const essentialImages = ['khpl.jpeg', 'KHPL-QR-CODE.jpeg'];
   
-  console.log('🖼️ Preloading essential KHPL images from S3...');
+  // Preloading essential KHPL images from S3
   
   const promises = essentialImages.map(async (imageName) => {
     try {
@@ -96,7 +96,7 @@ export const preloadEssentialImages = async () => {
       console.log(`✅ Preloaded: ${imageName}`);
       return { imageName, url, success: true };
     } catch (error) {
-      console.warn(`❌ Failed to preload: ${imageName}`, error.message);
+      // Failed to preload image
       return { imageName, url: null, success: false };
     }
   });
@@ -107,7 +107,7 @@ export const preloadEssentialImages = async () => {
     result.status === 'fulfilled' && result.value.success
   ).length;
   
-  console.log(`📸 Preloaded ${successful}/${essentialImages.length} images from S3`);
+  // Preloaded images from S3
   return results;
 };
 
@@ -162,7 +162,7 @@ export const uploadImageToS3 = async (imageFile, imageName) => {
 
     await client.send(command);
     
-    console.log(`✅ Uploaded image to S3: ${imageName}`);
+    // Image uploaded to S3
     
     // Clear cache for this image so it reloads
     if (imageCache.has(imageName)) {
@@ -179,7 +179,7 @@ export const uploadImageToS3 = async (imageFile, imageName) => {
       imageName: imageName
     };
   } catch (error) {
-    console.error('Failed to upload image to S3:', error);
+    // Failed to upload image to S3
     throw new Error(`Upload failed: ${error.message}`);
   }
 };
@@ -189,7 +189,7 @@ export const cleanupImageCache = () => {
   imageCache.forEach((url, imageName) => {
     if (url.startsWith('blob:')) {
       URL.revokeObjectURL(url);
-      console.log(`🧹 Cleaned up cached image: ${imageName}`);
+      // Cleaned up cached image
     }
   });
   imageCache.clear();

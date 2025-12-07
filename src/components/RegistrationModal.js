@@ -98,25 +98,15 @@ const RegistrationModal = ({ show, handleClose }) => {
       };
       
       
-      // Debug: Log what's being stored
-      console.log('📸 Payment screenshot data:', {
-        hasPaymentScreenshot: !!data.paymentScreenshot,
-        paymentScreenshotType: typeof data.paymentScreenshot,
-        paymentScreenshotLength: data.paymentScreenshot ? data.paymentScreenshot.length : 0
-      });
-      
       // Use the centralized save function (it handles ID generation and storage)
       const result = await saveRegistrationData(registrationData);
       
       if (result.success) {
-        console.log(`Registration data saved to ${result.storage} successfully`);
         return result.data;
       } else {
-        console.error('Registration save failed:', result.error);
         throw new Error(result.error || 'Failed to save registration');
       }
     } catch (error) {
-      console.error('Registration save error:', error);
       
       // Final fallback to localStorage only
       try {
@@ -138,7 +128,7 @@ const RegistrationModal = ({ show, handleClose }) => {
         
         return newRegistration;
       } catch (fallbackError) {
-        console.error('Final fallback failed:', fallbackError);
+        // Final fallback failed
         throw fallbackError;
       }
     }
@@ -188,7 +178,6 @@ const RegistrationModal = ({ show, handleClose }) => {
       }
       
     } catch (error) {
-      console.error('Payment error:', error);
       
       // Add registration with payment failure
       await addToInternalSheet(formData, {

@@ -76,22 +76,17 @@ const RegistrationStatus = () => {
         console.log('Test registration created with phoneNumber: 9876543210 and aadhaarNumber: 123456789012');
       }
 
-      console.log('Total registrations to search:', registrations.length);
-      console.log('Searching for:', searchData.searchType, '=', searchData.searchValue);
-      
-      // Debug: Show all available phone numbers and aadhaar numbers
-      console.log('Available phone numbers:', registrations.map(r => r.phoneNumber || r.phone).filter(Boolean));
-      console.log('Available aadhaar numbers:', registrations.map(r => r.aadhaarNumber || r.aadhaar).filter(Boolean));
+      // Search through registrations
 
       // Search for registration (fix field name mapping)
       const foundRegistration = registrations.find(reg => {
         if (searchData.searchType === 'phone') {
           const regPhone = reg.phoneNumber || reg.phone; // Handle both field names
-          console.log('Comparing phone:', regPhone, 'with', searchData.searchValue);
+          // Comparing phone numbers
           return regPhone === searchData.searchValue;
         } else {
           const regAadhaar = reg.aadhaarNumber || reg.aadhaar; // Handle both field names
-          console.log('Comparing aadhaar:', regAadhaar, 'with', searchData.searchValue);
+          // Comparing aadhaar numbers
           return regAadhaar === searchData.searchValue;
         }
       });
@@ -104,7 +99,6 @@ const RegistrationStatus = () => {
         setError(`No registration found with this ${searchData.searchType === 'phone' ? 'phone number' : 'Aadhaar number'}. Total registrations checked: ${registrations.length}`);
       }
     } catch (error) {
-      console.error('Search error:', error);
       setError('Failed to search registration. Please try again.');
     } finally {
       setLoading(false);

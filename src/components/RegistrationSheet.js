@@ -5,18 +5,10 @@ import { loadRegistrationData } from '../utils/awsS3Storage';
 
 const RegistrationSheet = () => {
   const [registrations, setRegistrations] = useState([]);
-  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [lastUpdated] = useState(new Date());
 
   useEffect(() => {
     loadRegistrations();
-    
-    // Auto-refresh every 3 seconds
-    const interval = setInterval(() => {
-      loadRegistrations();
-      setLastUpdated(new Date());
-    }, 3000);
-
-    return () => clearInterval(interval);
   }, []);
 
   const loadRegistrations = async () => {
@@ -28,7 +20,7 @@ const RegistrationSheet = () => {
         return;
       }
     } catch (error) {
-      console.error('Failed to load registration data:', error);
+      // Silent fallback to localStorage
     }
     
     // Final fallback to localStorage
@@ -84,7 +76,7 @@ const RegistrationSheet = () => {
                 </div>
                 <div className="d-flex align-items-center">
                   <Badge bg="light" text="dark" className="me-3">
-                    Live Updates: {lastUpdated.toLocaleTimeString()}
+                    Last Updated: {lastUpdated.toLocaleTimeString()}
                   </Badge>
                   <Button 
                     variant="success" 
@@ -188,7 +180,7 @@ const RegistrationSheet = () => {
                     <i className="fas fa-info-circle me-1"></i>
                     Total Registrations: <strong>{registrations.length}</strong> | 
                     Latest registration highlighted in yellow | 
-                    Auto-refreshes every 3 seconds
+                    Manual refresh available
                   </small>
                 </Card.Footer>
               )}
