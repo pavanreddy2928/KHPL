@@ -3,6 +3,7 @@ import { Modal, Button, Table, Badge, Row, Col, Image, Tabs, Tab } from 'react-b
 import * as XLSX from 'xlsx';
 import { loadRegistrationData, saveRegistrationData, verifyS3Access } from '../utils/awsS3Storage';
 import RegistrationSheet from './RegistrationSheet';
+import ImageUploadManager from './ImageUploadManager';
 
 const AdminPanel = ({ show, handleClose }) => {
   const [registrations, setRegistrations] = useState([]);
@@ -368,6 +369,12 @@ const AdminPanel = ({ show, handleClose }) => {
           <Tab eventKey="livesheet" title={<><i className="fas fa-chart-line me-1"></i>Live Registration Sheet</>}>
             <div style={{height: '70vh', overflow: 'auto'}}>
               <RegistrationSheet />
+            </div>
+          </Tab>
+          
+          <Tab eventKey="images" title={<><i className="fas fa-images me-1"></i>S3 Images</>}>
+            <div style={{height: '70vh', overflow: 'auto', padding: '20px'}}>
+              <ImageUploadManager />
             </div>
           </Tab>
         </Tabs>
