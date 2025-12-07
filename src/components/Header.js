@@ -69,7 +69,7 @@ const Header = () => {
       <Container>
         <Navbar.Brand href="#home" className="fw-bold">
           <img
-            src="/khpl.jpeg"
+            src={`${process.env.PUBLIC_URL}/khpl.jpeg`}
             width="40"
             height="40"
             className="d-inline-block align-top me-2 rounded-circle"
