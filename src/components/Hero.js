@@ -2,7 +2,6 @@ import React from 'react';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import { FaInstagram, FaYoutube, FaFacebookF } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
-import khplLogo from '../assets/khpl.jpeg';
 
 const Hero = () => {
   return (
@@ -12,19 +11,10 @@ const Hero = () => {
           <Col>
             <div className="mb-4">
               <img
-                src={khplLogo}
+                src="./static/images/khpl.jpeg"
                 alt="KHPL Logo"
                 className="rounded-circle border border-white border-3"
                 style={{ width: '150px', height: '150px' }}
-                onError={(e) => {
-                  // First fallback: try public folder
-                  if (!e.target.src.includes('/khpl.jpeg')) {
-                    e.target.src = "/khpl.jpeg";
-                  } else {
-                    // Final fallback: SVG placeholder
-                    e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23667eea'/%3E%3Ctext x='75' y='85' text-anchor='middle' fill='white' font-size='20' font-weight='bold'%3EKHPL%3C/text%3E%3C/svg%3E";
-                  }
-                }}
               />
             </div>
             <h1 className="display-4 fw-bold mb-3">
