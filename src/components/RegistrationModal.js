@@ -1,6 +1,16 @@
 import React, { useState } from 'react';
 import { Modal, Button, Form, Row, Col, Alert, Spinner } from 'react-bootstrap';
-import { saveRegistrationData, loadRegistrationData } from '../utils/awsS3Storage';
+import { saveRegistrationData } from '../utils/awsS3Storage';
+
+// Utility function to convert file to base64
+const fileToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
+  });
+};
 
 const RegistrationModal = ({ show, handleClose }) => {
   const [formData, setFormData] = useState({
@@ -10,7 +20,9 @@ const RegistrationModal = ({ show, handleClose }) => {
     aadhaarNumber: '',
     playerType: '',
     jerseySize: '',
-    image: null
+    image: null,
+    userPhoto: null,
+    paymentScreenshot: null
   });
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
@@ -34,20 +46,37 @@ const RegistrationModal = ({ show, handleClose }) => {
     }));
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData(prev => ({
-        ...prev,
-        image: file
-      }));
+      try {
+        // Convert to base64 for storage and display
+        const base64 = await fileToBase64(file);
+        setFormData(prev => ({
+          ...prev,
+          image: file,
+          userPhoto: base64 // Store base64 for display
+        }));
+      } catch (error) {
+        console.error('Error processing image:', error);
+      }
     }
   };
 
-  const handlePaymentScreenshotChange = (e) => {
+  const handlePaymentScreenshotChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      setPaymentScreenshot(file);
+      try {
+        // Convert to base64 for storage and display
+        const base64 = await fileToBase64(file);
+        setPaymentScreenshot(file);
+        setFormData(prev => ({
+          ...prev,
+          paymentScreenshot: base64 // Store base64 for display
+        }));
+      } catch (error) {
+        console.error('Error processing payment screenshot:', error);
+      }
     }
   };
 
@@ -58,11 +87,14 @@ const RegistrationModal = ({ show, handleClose }) => {
         ...data,
         registrationDate: new Date().toLocaleString(),
         imageName: data.image ? data.image.name : 'No image',
-        paymentScreenshotName: data.paymentScreenshot ? data.paymentScreenshot.name : null,
+        paymentScreenshotName: paymentScreenshot ? paymentScreenshot.name : null,
         status: paymentInfo.status || 'Payment Pending',
         paymentId: paymentInfo.transactionId || null,
         amount: 500,
-        paymentStatus: paymentInfo.paymentStatus || 'PENDING'
+        paymentStatus: paymentInfo.paymentStatus || 'PENDING',
+        // Include base64 images for display in admin panel
+        userPhoto: data.userPhoto || null,
+        paymentScreenshot: data.paymentScreenshot || null
       };
       
       // Use the centralized save function (it handles ID generation and storage)
@@ -136,7 +168,7 @@ const RegistrationModal = ({ show, handleClose }) => {
         
         // Reset form after delay
         setTimeout(() => {
-          setFormData({ name: '', email: '', phoneNumber: '', aadhaarNumber: '', playerType: '', jerseySize: '', image: null });
+          setFormData({ name: '', email: '', phoneNumber: '', aadhaarNumber: '', playerType: '', jerseySize: '', image: null, userPhoto: null, paymentScreenshot: null });
           setPaymentScreenshot(null);
           setShowAlert(false);
           setShowPaymentScreen(false);
