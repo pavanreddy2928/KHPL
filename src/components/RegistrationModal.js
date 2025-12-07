@@ -484,8 +484,14 @@ const RegistrationModal = ({ show, handleClose }) => {
                   className="img-fluid rounded"
                   style={{width: '100%', height: 'auto', maxHeight: '150px', objectFit: 'contain'}}
                   onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextElementSibling.style.display = 'flex';
+                    // First fallback: try public folder
+                    if (!e.target.src.includes('/KHPL-QR-CODE.jpeg')) {
+                      e.target.src = "/KHPL-QR-CODE.jpeg";
+                    } else {
+                      // Final fallback: hide image and show message
+                      e.target.style.display = 'none';
+                      e.target.nextElementSibling.style.display = 'flex';
+                    }
                   }}
                 />
                 <div className="qr-placeholder bg-light border rounded align-items-center justify-content-center" style={{height: '180px', display: 'none'}}>

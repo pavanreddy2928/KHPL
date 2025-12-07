@@ -17,7 +17,13 @@ const Hero = () => {
                 className="rounded-circle border border-white border-3"
                 style={{ width: '150px', height: '150px' }}
                 onError={(e) => {
-                  e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23667eea'/%3E%3Ctext x='75' y='85' text-anchor='middle' fill='white' font-size='20' font-weight='bold'%3EKHPL%3C/text%3E%3C/svg%3E";
+                  // First fallback: try public folder
+                  if (!e.target.src.includes('/khpl.jpeg')) {
+                    e.target.src = "/khpl.jpeg";
+                  } else {
+                    // Final fallback: SVG placeholder
+                    e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23667eea'/%3E%3Ctext x='75' y='85' text-anchor='middle' fill='white' font-size='20' font-weight='bold'%3EKHPL%3C/text%3E%3C/svg%3E";
+                  }
                 }}
               />
             </div>

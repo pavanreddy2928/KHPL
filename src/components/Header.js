@@ -76,7 +76,13 @@ const Header = () => {
             className="d-inline-block align-top me-2 rounded-circle"
             alt="KHPL Logo"
             onError={(e) => {
-              e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%23667eea'/%3E%3Ctext x='20' y='25' text-anchor='middle' fill='white' font-size='12' font-weight='bold'%3EKHPL%3C/text%3E%3C/svg%3E";
+              // First fallback: try public folder
+              if (!e.target.src.includes('/khpl.jpeg')) {
+                e.target.src = "/khpl.jpeg";
+              } else {
+                // Final fallback: SVG placeholder
+                e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%23667eea'/%3E%3Ctext x='20' y='25' text-anchor='middle' fill='white' font-size='12' font-weight='bold'%3EKHPL%3C/text%3E%3C/svg%3E";
+              }
             }}
           />
           KHPL
