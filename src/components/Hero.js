@@ -2,6 +2,7 @@ import React from 'react';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import { FaInstagram, FaYoutube, FaFacebookF } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
+import khplLogo from '../assets/khpl.jpeg';
 
 const Hero = () => {
   return (
@@ -11,7 +12,7 @@ const Hero = () => {
           <Col>
             <div className="mb-4">
               <img
-                src={`${process.env.PUBLIC_URL}/khpl.jpeg`}
+                src={khplLogo}
                 alt="KHPL Logo"
                 className="rounded-circle border border-white border-3"
                 style={{ width: '150px', height: '150px' }}
