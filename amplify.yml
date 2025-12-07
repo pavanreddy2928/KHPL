@@ -4,9 +4,16 @@ frontend:
     preBuild:
       commands:
         - npm ci
+        - echo "Starting KHPL build process"
     build:
       commands:
-        - npm run build
+        - echo "Running prebuild image copy"
+        - node scripts/prebuild-copy-images.js
+        - echo "Building React app"
+        - npm run build:only
+        - echo "Running postbuild image copy"
+        - node scripts/copy-images.js
+        - echo "Build completed successfully"
   artifacts:
     baseDirectory: build
     files:
