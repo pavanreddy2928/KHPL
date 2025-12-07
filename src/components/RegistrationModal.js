@@ -97,6 +97,14 @@ const RegistrationModal = ({ show, handleClose }) => {
         paymentScreenshot: data.paymentScreenshot || null
       };
       
+      
+      // Debug: Log what's being stored
+      console.log('📸 Payment screenshot data:', {
+        hasPaymentScreenshot: !!data.paymentScreenshot,
+        paymentScreenshotType: typeof data.paymentScreenshot,
+        paymentScreenshotLength: data.paymentScreenshot ? data.paymentScreenshot.length : 0
+      });
+      
       // Use the centralized save function (it handles ID generation and storage)
       const result = await saveRegistrationData(registrationData);
       
@@ -207,10 +215,10 @@ const RegistrationModal = ({ show, handleClose }) => {
     }
     
     try {
-      // Add payment screenshot to form data
+      // Add payment screenshot to form data (use the base64 version from formData)
       const paymentData = {
         ...formData,
-        paymentScreenshot: paymentScreenshot
+        paymentScreenshotFile: paymentScreenshot // Keep the File object for filename
       };
       await processUPIPayment(paymentData);
     } catch (error) {

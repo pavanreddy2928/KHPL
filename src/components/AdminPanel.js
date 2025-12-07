@@ -111,6 +111,10 @@ const AdminPanel = ({ show, handleClose }) => {
   };
 
   const viewAttachments = (registration) => {
+    console.log('👁️ Viewing attachments for:', registration.name);
+    console.log('📸 User photo:', !!registration.userPhoto);
+    console.log('💳 Payment screenshot:', !!registration.paymentScreenshot);
+    console.log('📋 Full registration data:', registration);
     setSelectedUser(registration);
     setShowAttachmentsModal(true);
   };
