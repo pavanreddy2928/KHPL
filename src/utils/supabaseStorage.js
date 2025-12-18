@@ -17,7 +17,7 @@ export const saveRegistrationToSupabase = async (registrationData) => {
           email: registrationData.email,
           phone_number: registrationData.phoneNumber,
           image_url: registrationData.imageUrl || null,
-          registration_fee: registrationData.registrationFee || 500,
+          registration_fee: registrationData.registrationFee || 999,
           payment_status: registrationData.paymentStatus || 'pending',
           created_at: new Date().toISOString()
         }
@@ -83,7 +83,7 @@ CREATE TABLE registrations (
   email VARCHAR(255) NOT NULL,
   phone_number VARCHAR(20) NOT NULL,
   image_url TEXT,
-  registration_fee INTEGER DEFAULT 500,
+  registration_fee INTEGER DEFAULT 999,
   payment_status VARCHAR(50) DEFAULT 'pending',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Button, Form, Row, Col, Alert, Spinner } from 'react-bootstrap';
+import { Modal, Button, Form, Row, Col, Alert, Spinner, Badge } from 'react-bootstrap';
 import { saveRegistrationData } from '../utils/awsS3Storage';
 
 // Utility function to convert file to base64
@@ -17,7 +17,7 @@ const RegistrationModal = ({ show, handleClose }) => {
     name: '',
     email: '',
     phoneNumber: '',
-    aadhaarNumber: '',
+    aadhaarCopy: null,
     playerType: '',
     image: null,
     userPhoto: null,
@@ -28,10 +28,15 @@ const RegistrationModal = ({ show, handleClose }) => {
   const [alertVariant, setAlertVariant] = useState('success');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showPaymentScreen, setShowPaymentScreen] = useState(false);
+  const [showSuccessScreen, setShowSuccessScreen] = useState(false);
+  const [successData, setSuccessData] = useState(null);
   const [paymentScreenshot, setPaymentScreenshot] = useState(null);
 
   const handleModalClose = () => {
+    setFormData({ name: '', email: '', phoneNumber: '', aadhaarCopy: null, playerType: '', image: null, userPhoto: null, paymentScreenshot: null });
     setShowPaymentScreen(false);
+    setShowSuccessScreen(false);
+    setSuccessData(null);
     setShowAlert(false);
     setPaymentScreenshot(null);
     handleClose();
@@ -74,7 +79,24 @@ const RegistrationModal = ({ show, handleClose }) => {
           paymentScreenshot: base64 // Store base64 for display
         }));
       } catch (error) {
-        console.error('Error processing payment screenshot:', error);
+        throw error;
+      }
+    }
+  };
+
+  const handleAadhaarCopyChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      try {
+        // Convert to base64 for storage and display
+        const base64 = await fileToBase64(file);
+        setFormData(prev => ({
+          ...prev,
+          aadhaarCopy: base64,
+          aadhaarCopyFile: file
+        }));
+      } catch (error) {
+        throw error;
       }
     }
   };
@@ -89,7 +111,7 @@ const RegistrationModal = ({ show, handleClose }) => {
         paymentScreenshotName: paymentScreenshot ? paymentScreenshot.name : null,
         status: paymentInfo.status || 'Payment Pending',
         paymentId: paymentInfo.transactionId || null,
-        amount: 500,
+        amount: 999,
         paymentStatus: paymentInfo.paymentStatus || 'PENDING',
         // Include base64 images for display in admin panel
         userPhoto: data.userPhoto || null,
@@ -118,7 +140,7 @@ const RegistrationModal = ({ show, handleClose }) => {
           paymentScreenshotName: data.paymentScreenshot ? data.paymentScreenshot.name : null,
           status: paymentInfo.status || 'Payment Pending',
           paymentId: paymentInfo.transactionId || null,
-          amount: 500,
+          amount: 999,
           paymentStatus: paymentInfo.paymentStatus || 'PENDING'
         };
         
@@ -140,7 +162,7 @@ const RegistrationModal = ({ show, handleClose }) => {
       const transactionId = `KHPL_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
       const paymentData = {
-        amount: 500, // ₹500
+        amount: 999, // ₹999
         name: registrationData.name,
         email: registrationData.email,
         phone: registrationData.phoneNumber,
@@ -159,18 +181,21 @@ const RegistrationModal = ({ show, handleClose }) => {
           paymentStatus: 'SUCCESS'
         });
         
-        setAlertMessage(`Payment successful! Registration #${newRecord.id} completed and saved successfully. Transaction ID: ${paymentResult.transactionId}`);
-        setAlertVariant('success');
-        setShowAlert(true);
+        // Set success data and show success screen
+        setSuccessData({
+          registrationId: newRecord.id,
+          transactionId: paymentResult.transactionId,
+          playerName: registrationData.name,
+          amount: 999,
+          registrationDate: new Date().toLocaleDateString()
+        });
+        setShowPaymentScreen(false);
+        setShowSuccessScreen(true);
         
-        // Reset form after delay
+        // Auto-close after 5 seconds
         setTimeout(() => {
-          setFormData({ name: '', email: '', phoneNumber: '', aadhaarNumber: '', playerType: '', image: null, userPhoto: null, paymentScreenshot: null });
-          setPaymentScreenshot(null);
-          setShowAlert(false);
-          setShowPaymentScreen(false);
-          handleClose();
-        }, 3000);
+          handleModalClose();
+        }, 5000);
         
       } else {
         throw new Error(paymentResult.error || 'Payment failed');
@@ -250,8 +275,8 @@ const RegistrationModal = ({ show, handleClose }) => {
     e.preventDefault();
     
     // Validation
-    if (!formData.name || !formData.email || !formData.phoneNumber || !formData.aadhaarNumber || !formData.playerType || !formData.image) {
-      setAlertMessage('Please fill in all required fields including Aadhaar number, player type, and upload an image.');
+    if (!formData.name || !formData.email || !formData.phoneNumber || !formData.aadhaarCopy || !formData.playerType || !formData.image) {
+      setAlertMessage('Please fill in all required fields including Aadhaar copy, player type, and upload an image.');
       setAlertVariant('danger');
       setShowAlert(true);
       return;
@@ -275,14 +300,7 @@ const RegistrationModal = ({ show, handleClose }) => {
       return;
     }
     
-    // Aadhaar validation (12 digits)
-    const aadhaarRegex = /^[0-9]{12}$/;
-    if (!aadhaarRegex.test(formData.aadhaarNumber.replace(/\D/g, ''))) {
-      setAlertMessage('Please enter a valid 12-digit Aadhaar number.');
-      setAlertVariant('danger');
-      setShowAlert(true);
-      return;
-    }
+
     
     // Show payment screen instead of processing payment immediately
     setShowPaymentScreen(true);
@@ -305,129 +323,143 @@ const RegistrationModal = ({ show, handleClose }) => {
           </Alert>
         )}
         
-        {!showPaymentScreen ? (
+        {!showPaymentScreen && !showSuccessScreen ? (
         <Form onSubmit={handleSubmit}>
-          <Row>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>
-                  Full Name <span className="text-danger">*</span>
-                </Form.Label>
-                <Form.Control
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  placeholder="Enter your full name"
-                  required
-                />
-              </Form.Group>
-            </Col>
+          {/* Personal Information Section */}
+          <div className="form-section mb-4">
+            <h6 className="text-primary mb-3 border-bottom pb-2">
+              <i className="fas fa-user me-2"></i>
+              Personal Information
+            </h6>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>
+                    Full Name <span className="text-danger">*</span>
+                  </Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    placeholder="Enter your full name"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>
+                    Email Address <span className="text-danger">*</span>
+                  </Form.Label>
+                  <Form.Control
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="Enter your email"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
             
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>
-                  Email Address <span className="text-danger">*</span>
-                </Form.Label>
-                <Form.Control
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="Enter your email"
-                  required
-                />
-              </Form.Group>
-            </Col>
-          </Row>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>
+                    Phone Number <span className="text-danger">*</span>
+                  </Form.Label>
+                  <Form.Control
+                    type="tel"
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={handleInputChange}
+                    placeholder="Enter your phone number"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>
+                    Player Type <span className="text-danger">*</span>
+                  </Form.Label>
+                  <Form.Select
+                    name="playerType"
+                    value={formData.playerType}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="">Select Player Type</option>
+                    <option value="Batsman">Batsman</option>
+                    <option value="Bowler">Bowler</option>
+                    <option value="Allrounder">Allrounder</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
+          </div>
           
-          <Row>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>
-                  Phone Number <span className="text-danger">*</span>
-                </Form.Label>
-                <Form.Control
-                  type="tel"
-                  name="phoneNumber"
-                  value={formData.phoneNumber}
-                  onChange={handleInputChange}
-                  placeholder="Enter your phone number"
-                  required
-                />
-              </Form.Group>
-            </Col>
-            
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>
-                  Aadhaar Card Number <span className="text-danger">*</span>
-                </Form.Label>
-                <Form.Control
-                  type="text"
-                  name="aadhaarNumber"
-                  value={formData.aadhaarNumber}
-                  onChange={handleInputChange}
-                  placeholder="Enter 12-digit Aadhaar number"
-                  maxLength="12"
-                  pattern="[0-9]{12}"
-                  required
-                />
-                <Form.Text className="text-muted">
-                  Enter your 12-digit Aadhaar number (without spaces)
-                </Form.Text>
-              </Form.Group>
-            </Col>
-          </Row>
+          {/* Document Upload Section */}
+          <div className="form-section mb-4">
+            <h6 className="text-primary mb-3 border-bottom pb-2">
+              <i className="fas fa-file-upload me-2"></i>
+              Document Upload
+            </h6>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>
+                    Aadhaar Card Copy <span className="text-danger">*</span>
+                  </Form.Label>
+                  <Form.Control
+                    type="file"
+                    name="aadhaarCopy"
+                    onChange={handleAadhaarCopyChange}
+                    accept="image/*,.pdf"
+                    required
+                  />
+                  <Form.Text className="text-muted">
+                    Upload a clear copy of your Aadhaar card (Image or PDF format)
+                  </Form.Text>
+                  {formData.aadhaarCopy && (
+                    <div className="mt-2">
+                      <Badge bg="success">
+                        <i className="fas fa-check-circle me-1"></i>
+                        Aadhaar copy uploaded
+                      </Badge>
+                    </div>
+                  )}
+                </Form.Group>
+              </Col>
+              
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>
+                    Profile Photo <span className="text-danger">*</span>
+                  </Form.Label>
+                  <Form.Control
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    required
+                  />
+                  <Form.Text className="text-muted">
+                    Upload your photo (JPG, PNG, GIF - Max 5MB)
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+            </Row>
+          </div>
 
-          <Row>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>
-                  Player Type <span className="text-danger">*</span>
-                </Form.Label>
-                <Form.Select
-                  name="playerType"
-                  value={formData.playerType}
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="">Select Player Type</option>
-                  <option value="Batsman">Batsman</option>
-                  <option value="Bowler">Bowler</option>
-                  <option value="Allrounder">Allrounder</option>
-                </Form.Select>
-              </Form.Group>
-            </Col>
-          </Row>
-
-          <Row>
-            <Col md={6}>
-
-            </Col>
-            
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>
-                  Profile Photo <span className="text-danger">*</span>
-                </Form.Label>
-                <Form.Control
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  required
-                />
-                <Form.Text className="text-muted">
-                  Upload your photo (JPG, PNG, GIF - Max 5MB)
-                </Form.Text>
-              </Form.Group>
-            </Col>
-          </Row>
-          
+          {/* Registration Information Section */}
           <div className="bg-light p-3 rounded mb-3">
             <h6 className="text-primary mb-2">Registration Details:</h6>
             <ul className="mb-0 small">
-              <li><strong>Registration Fee: ₹500 (including GST)</strong></li>
+              <li><strong>Registration Fee: ₹999</strong></li>
               <li>Payment Method: UPI Gateway</li>
               <li>Tournament Location: Karnataka</li>
               <li>Venue: Gunjuru, Bengaluru</li>
@@ -441,7 +473,7 @@ const RegistrationModal = ({ show, handleClose }) => {
             </div>
           </div>
         </Form>
-        ) : (
+        ) : showPaymentScreen && !showSuccessScreen ? (
         <div className="payment-screen text-center">
           <div className="mb-4">
             <i className="fas fa-mobile-alt fa-3x text-primary mb-3"></i>
@@ -455,13 +487,22 @@ const RegistrationModal = ({ show, handleClose }) => {
                 <div className="col-6">{formData.email}</div>
                 <div className="col-6"><strong>Phone:</strong></div>
                 <div className="col-6">{formData.phoneNumber}</div>
-                <div className="col-6"><strong>Aadhaar:</strong></div>
-                <div className="col-6">{formData.aadhaarNumber}</div>
+                <div className="col-6"><strong>Aadhaar Copy:</strong></div>
+                <div className="col-6">
+                  {formData.aadhaarCopy ? (
+                    <Badge bg="success">
+                      <i className="fas fa-check-circle me-1"></i>
+                      Uploaded
+                    </Badge>
+                  ) : (
+                    <span className="text-muted">Not uploaded</span>
+                  )}
+                </div>
                 <div className="col-6"><strong>Player Type:</strong></div>
                 <div className="col-6">{formData.playerType}</div>
 
                 <div className="col-12 mt-2 pt-2 border-top">
-                  <strong className="text-success fs-5">Total Amount: ₹500</strong>
+                  <strong className="text-success fs-5">Total Amount: ₹999</strong>
                 </div>
               </div>
             </div>
@@ -493,7 +534,21 @@ const RegistrationModal = ({ show, handleClose }) => {
                 </div>
                 <div className="text-center mt-2">
                   <div className="small text-muted">Scan to Pay</div>
-                  <div className="small fw-bold text-primary">₹500</div>
+                  <div className="small fw-bold text-primary">₹999</div>
+                  <Button 
+                    variant="outline-primary" 
+                    size="sm"
+                    className="mt-2"
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = 'https://khpl-registration-data-unique-name.s3.ap-south-1.amazonaws.com/images/KHPL-QR-CODE.jpeg';
+                      link.download = 'KHPL-Payment-QR-Code.jpeg';
+                      link.click();
+                    }}
+                  >
+                    <i className="fas fa-download me-1"></i>
+                    Download QR
+                  </Button>
                 </div>
               </div>
               <div className="small text-muted mb-3">
@@ -580,16 +635,68 @@ const RegistrationModal = ({ show, handleClose }) => {
               ) : (
                 <>
                   <i className="fas fa-check me-2"></i>
-                  I have paid ₹500
+                  I have paid ₹999
                 </>
               )}
             </Button>
           </div>
         </div>
-        )}
+        ) : showSuccessScreen ? (
+        <div className="success-screen text-center py-5">
+          <div className="mb-4">
+            <div className="success-icon mb-3">
+              <i className="fas fa-check-circle fa-5x text-success"></i>
+            </div>
+            <h2 className="text-success mb-3">
+              <i className="fas fa-trophy me-2"></i>
+              Registration Successful!
+            </h2>
+            <div className="alert alert-success mx-3">
+              <h5 className="mb-3">Welcome to KHPL!</h5>
+              <div className="row text-start">
+                <div className="col-5"><strong>Player Name:</strong></div>
+                <div className="col-7">{successData?.playerName}</div>
+                <div className="col-5"><strong>Registration ID:</strong></div>
+                <div className="col-7">#{successData?.registrationId}</div>
+                <div className="col-5"><strong>Transaction ID:</strong></div>
+                <div className="col-7">{successData?.transactionId}</div>
+                <div className="col-5"><strong>Amount Paid:</strong></div>
+                <div className="col-7">₹{successData?.amount}</div>
+                <div className="col-5"><strong>Registration Date:</strong></div>
+                <div className="col-7">{successData?.registrationDate}</div>
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="alert alert-info">
+                <i className="fas fa-info-circle me-2"></i>
+                <strong>Next Steps:</strong>
+                <ul className="mt-2 mb-0 text-start">
+                  <li>You will receive a confirmation email shortly</li>
+                  <li>Keep your Registration ID for future reference</li>
+                  <li>Tournament details will be shared via email</li>
+                </ul>
+              </div>
+            </div>
+            <Button 
+              variant="primary" 
+              size="lg" 
+              onClick={handleModalClose}
+              className="mt-3"
+            >
+              <i className="fas fa-home me-2"></i>
+              Close
+            </Button>
+            <div className="mt-2">
+              <small className="text-muted">
+                This window will close automatically in 5 seconds
+              </small>
+            </div>
+          </div>
+        </div>
+        ) : null}  
       </Modal.Body>
       
-      {!showPaymentScreen && (
+      {!showPaymentScreen && !showSuccessScreen && (
         <Modal.Footer className="d-flex justify-content-between">
           <Button variant="secondary" onClick={handleModalClose}>
             Cancel

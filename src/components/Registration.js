@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Container, Row, Col, Card, Button, Badge } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button } from 'react-bootstrap';
 import RegistrationModal from './RegistrationModal';
 
 const Registration = () => {
@@ -11,27 +11,7 @@ const Registration = () => {
   return (
     <section id="registration" className="registration-section py-5" style={{ background: 'linear-gradient(135deg, #4158D0 0%, #C850C0 100%)' }}>
       <Container>
-        <Row className="g-4">
-          {/* Grand Finals Card */}
-          <Col md={6}>
-            <Card className="h-100 border-0 shadow-lg" style={{ background: 'linear-gradient(45deg, #FFE066 0%, #FF6B6B 100%)' }}>
-              <Card.Body className="p-4 text-center">
-                <Badge bg="success" className="mb-3 px-3 py-2">
-                  #streetheroestostadiumsuperstars
-                </Badge>
-                <h3 className="fw-bold text-dark mb-3">Matches at Gunjur Bengaluru</h3>
-                
-                <div className="india-map">
-                  <img
-                    src="/api/placeholder/100/120"
-                    alt="India Map"
-                    className="img-fluid"
-                  />
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-          
+        <Row className="justify-content-center">
           {/* Sign Up Card */}
           <Col md={6}>
             <Card className="h-100 border-0 shadow-lg" style={{ background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)' }}>
@@ -43,7 +23,7 @@ const Registration = () => {
                 </h2>
                 <h4 className="mb-4">Early bird Registration</h4>
                 <div className="price-section mb-4">
-                  <span className="h3 fw-bold">at ₹499 + GST*</span>
+                  <span className="h3 fw-bold">at ₹999*</span>
                 </div>
                 <Button 
                   variant="warning" 

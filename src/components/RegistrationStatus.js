@@ -60,10 +60,10 @@ const RegistrationStatus = () => {
           name: 'Test Player',
           email: 'test@example.com',
           phoneNumber: '9876543210',
-          aadhaarNumber: '123456789012',
+          aadhaarCopy: 'test-base64-data',
           playerType: 'Batsman',
 
-          amount: 500,
+          amount: 999,
           paymentStatus: 'SUCCESS',
           status: 'Active',
           registrationDate: new Date().toLocaleDateString(),
@@ -96,7 +96,7 @@ const RegistrationStatus = () => {
       if (foundRegistration) {
         setSearchResult(foundRegistration);
       } else {
-        setError(`No registration found with this ${searchData.searchType === 'phone' ? 'phone number' : 'Aadhaar number'}. Total registrations checked: ${registrations.length}`);
+        setError(`No registration found with this phone number. Total registrations checked: ${registrations.length}`);
       }
     } catch (error) {
       setError('Failed to search registration. Please try again.');
@@ -128,7 +128,7 @@ const RegistrationStatus = () => {
           <div className="text-center mb-5">
             <h2 className="display-4 fw-bold text-primary">Check Registration Status</h2>
             <p className="lead text-muted">
-              Search your KHPL registration using phone number or Aadhaar number
+              Search your KHPL registration using your phone number
             </p>
           </div>
 
@@ -148,21 +148,20 @@ const RegistrationStatus = () => {
                         className="border-2"
                       >
                         <option value="phone">Phone Number</option>
-                        <option value="aadhaar">Aadhaar Number</option>
                       </Form.Select>
                     </Form.Group>
                   </Col>
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label className="fw-semibold">
-                        {searchData.searchType === 'phone' ? 'Phone Number' : 'Aadhaar Number'}
+                        Phone Number
                       </Form.Label>
                       <Form.Control
                         type={searchData.searchType === 'phone' ? 'tel' : 'text'}
                         name="searchValue"
                         value={searchData.searchValue}
                         onChange={handleInputChange}
-                        placeholder={searchData.searchType === 'phone' ? 'Enter phone number' : 'Enter Aadhaar number'}
+                        placeholder="Enter phone number"
                         className="border-2"
                         required
                       />
@@ -236,8 +235,12 @@ const RegistrationStatus = () => {
                     </div>
                     
                     <div className="mb-3">
-                      <strong className="text-muted">Aadhaar:</strong>
-                      <div className="fs-6">{searchResult.aadhaarNumber || searchResult.aadhaar}</div>
+                      <strong className="text-muted">Aadhaar Copy:</strong>
+                      <div className="fs-6">
+                        <Badge bg={searchResult.aadhaarCopy ? 'success' : 'warning'}>
+                          {searchResult.aadhaarCopy ? 'Uploaded' : 'Missing'}
+                        </Badge>
+                      </div>
                     </div>
                   </Col>
                   
@@ -251,7 +254,7 @@ const RegistrationStatus = () => {
                   <Col md={6}>
                     <div className="mb-3">
                       <strong className="text-muted">Registration Fee:</strong>
-                      <div className="fs-6">₹{searchResult.amount || 500}</div>
+                      <div className="fs-6">₹{searchResult.amount || 999}</div>
                     </div>
                     
                     <div className="mb-3">
@@ -322,11 +325,11 @@ const RegistrationStatus = () => {
                 <i className="fas fa-search fs-1 text-muted mb-3"></i>
                 <h5 className="text-muted">Search Your Registration</h5>
                 <p className="text-muted mb-3">
-                  Enter your phone number or Aadhaar number to check your KHPL registration status
+                  Enter your phone number to check your KHPL registration status
                 </p>
                 <div className="alert alert-info">
                   <small>
-                    <strong>Test Data Available:</strong> Try searching with phone number <code>9876543210</code> or Aadhaar <code>123456789012</code>
+                    <strong>Test Data Available:</strong> Try searching with phone number <code>9876543210</code>
                   </small>
                 </div>
               </Card.Body>

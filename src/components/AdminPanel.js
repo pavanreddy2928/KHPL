@@ -56,7 +56,7 @@ const AdminPanel = ({ show, handleClose }) => {
         'Name': reg.name || '',
         'Email': reg.email || '',
         'Phone': reg.phoneNumber || reg.phone || '',
-        'Aadhaar': reg.aadhaarNumber || reg.aadhaar || '',
+        'Aadhaar Copy': reg.aadhaarCopy ? 'Uploaded' : 'Not Uploaded',
         'Player Type': reg.playerType || '',
 
         'Registration Date': reg.registrationDate || new Date().toLocaleDateString(),
@@ -74,7 +74,7 @@ const AdminPanel = ({ show, handleClose }) => {
         { wch: 20 }, // Name
         { wch: 30 }, // Email  
         { wch: 15 }, // Phone
-        { wch: 15 }, // Aadhaar
+        { wch: 15 }, // Aadhaar Copy
         { wch: 15 }, // Player Type
         { wch: 20 }, // Registration Date
         { wch: 15 }, // Payment Status
@@ -311,7 +311,7 @@ const AdminPanel = ({ show, handleClose }) => {
                   <th>Name</th>
                   <th>Email</th>
                   <th>Phone</th>
-                  <th>Aadhaar</th>
+                  <th>Aadhaar Copy</th>
                   <th>Player Type</th>
                   <th>Amount</th>
                   <th>Payment Status</th>
@@ -329,13 +329,15 @@ const AdminPanel = ({ show, handleClose }) => {
                     <td>{reg.email}</td>
                     <td>{reg.phoneNumber}</td>
                     <td>
-                      <span className="font-monospace small">{reg.aadhaarNumber || 'N/A'}</span>
+                      <Badge bg={reg.aadhaarCopy ? 'success' : 'warning'}>
+                        {reg.aadhaarCopy ? 'Uploaded' : 'Missing'}
+                      </Badge>
                     </td>
                     <td>
                       <Badge bg="secondary">{reg.playerType || 'N/A'}</Badge>
                     </td>
                     <td>
-                      <Badge bg="info">₹{reg.amount || 500}</Badge>
+                      <Badge bg="info">₹{reg.amount || 999}</Badge>
                     </td>
                     <td>
                       <Badge bg={reg.paymentStatus === 'SUCCESS' ? 'success' : reg.paymentStatus === 'FAILED' ? 'danger' : 'warning'}>
