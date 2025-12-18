@@ -394,9 +394,9 @@ const AdminPanel = ({ show, handleClose }) => {
                         {/* View Attachments Button */}
                         <Button 
                           size="sm" 
-                          variant={reg.userPhoto || reg.paymentScreenshot ? "info" : "outline-secondary"}
+                          variant={reg.userPhoto || reg.paymentScreenshot || reg.aadhaarCopy ? "info" : "outline-secondary"}
                           onClick={() => viewAttachments(reg)}
-                          title={`User Photo: ${!!reg.userPhoto ? '✓' : '✗'}, Payment Screenshot: ${!!reg.paymentScreenshot ? '✓' : '✗'}`}
+                          title={`User Photo: ${!!reg.userPhoto ? '✓' : '✗'}, Payment Screenshot: ${!!reg.paymentScreenshot ? '✓' : '✗'}, Aadhaar Copy: ${!!reg.aadhaarCopy ? '✓' : '✗'}`}
                         >
                           View Attachments
                         </Button>
@@ -451,8 +451,56 @@ const AdminPanel = ({ show, handleClose }) => {
       <Modal.Body>
         {selectedUser && (
           <Row>
+            {selectedUser.aadhaarCopy && (
+              <Col md={selectedUser.userPhoto && selectedUser.paymentScreenshot ? 4 : 6} className="mb-4">
+                <div className="text-center">
+                  <h6 className="fw-bold mb-3">
+                    <i className="fas fa-id-card me-2 text-info"></i>
+                    Aadhaar Copy
+                  </h6>
+                  <div className="border rounded p-3 bg-light">
+                    {selectedUser.aadhaarCopy.startsWith('data:image/') ? (
+                      <>
+                        <Image 
+                          src={selectedUser.aadhaarCopy} 
+                          alt="Aadhaar Copy" 
+                          fluid 
+                          rounded
+                          className="shadow-sm"
+                          style={{ maxHeight: '300px', objectFit: 'contain' }}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'block';
+                          }}
+                        />
+                        <div className="text-muted mt-2" style={{ display: 'none' }}>
+                          <i className="fas fa-image fs-1"></i>
+                          <div>Image not available</div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-4">
+                        <i className="fas fa-file-pdf fa-4x text-danger mb-3"></i>
+                        <div className="text-muted">PDF Document</div>
+                        <div className="small text-muted">Preview not available</div>
+                      </div>
+                    )}
+                  </div>
+                  <Button 
+                    variant="outline-info" 
+                    size="sm" 
+                    className="mt-2"
+                    onClick={() => window.open(selectedUser.aadhaarCopy, '_blank')}
+                  >
+                    <i className="fas fa-external-link-alt me-1"></i>
+                    Open in New Tab
+                  </Button>
+                </div>
+              </Col>
+            )}
+            
             {selectedUser.userPhoto && (
-              <Col md={6} className="mb-4">
+              <Col md={selectedUser.aadhaarCopy && selectedUser.paymentScreenshot ? 4 : 6} className="mb-4">
                 <div className="text-center">
                   <h6 className="fw-bold mb-3">
                     <i className="fas fa-user-circle me-2 text-primary"></i>
@@ -490,7 +538,7 @@ const AdminPanel = ({ show, handleClose }) => {
             )}
             
             {selectedUser.paymentScreenshot && (
-              <Col md={6} className="mb-4">
+              <Col md={selectedUser.aadhaarCopy && selectedUser.userPhoto ? 4 : 6} className="mb-4">
                 <div className="text-center">
                   <h6 className="fw-bold mb-3">
                     <i className="fas fa-receipt me-2 text-success"></i>
@@ -527,12 +575,12 @@ const AdminPanel = ({ show, handleClose }) => {
               </Col>
             )}
             
-            {!selectedUser.userPhoto && !selectedUser.paymentScreenshot && (
+            {!selectedUser.userPhoto && !selectedUser.paymentScreenshot && !selectedUser.aadhaarCopy && (
               <Col xs={12}>
                 <div className="text-center text-muted py-5">
                   <i className="fas fa-inbox fs-1 mb-3"></i>
                   <h5>No Attachments Found</h5>
-                  <p>This registration doesn't have any uploaded images.</p>
+                  <p>This registration doesn't have any uploaded images or documents.</p>
                 </div>
               </Col>
             )}

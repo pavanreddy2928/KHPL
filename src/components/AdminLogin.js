@@ -27,9 +27,9 @@ const AdminLogin = ({ show, handleClose, onLoginSuccess }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Find matching user
+    // Find matching user (case-insensitive username)
     const user = adminUsers.find(u => 
-      u.username === credentials.username && 
+      u.username.toLowerCase() === credentials.username.toLowerCase() && 
       u.password === credentials.password
     );
 
