@@ -19,7 +19,6 @@ const RegistrationModal = ({ show, handleClose }) => {
     phoneNumber: '',
     aadhaarNumber: '',
     playerType: '',
-    jerseySize: '',
     image: null,
     userPhoto: null,
     paymentScreenshot: null
@@ -166,7 +165,7 @@ const RegistrationModal = ({ show, handleClose }) => {
         
         // Reset form after delay
         setTimeout(() => {
-          setFormData({ name: '', email: '', phoneNumber: '', aadhaarNumber: '', playerType: '', jerseySize: '', image: null, userPhoto: null, paymentScreenshot: null });
+          setFormData({ name: '', email: '', phoneNumber: '', aadhaarNumber: '', playerType: '', image: null, userPhoto: null, paymentScreenshot: null });
           setPaymentScreenshot(null);
           setShowAlert(false);
           setShowPaymentScreen(false);
@@ -251,8 +250,8 @@ const RegistrationModal = ({ show, handleClose }) => {
     e.preventDefault();
     
     // Validation
-    if (!formData.name || !formData.email || !formData.phoneNumber || !formData.aadhaarNumber || !formData.playerType || !formData.jerseySize || !formData.image) {
-      setAlertMessage('Please fill in all required fields including Aadhaar number, player type, jersey size, and upload an image.');
+    if (!formData.name || !formData.email || !formData.phoneNumber || !formData.aadhaarNumber || !formData.playerType || !formData.image) {
+      setAlertMessage('Please fill in all required fields including Aadhaar number, player type, and upload an image.');
       setAlertVariant('danger');
       setShowAlert(true);
       return;
@@ -404,26 +403,7 @@ const RegistrationModal = ({ show, handleClose }) => {
 
           <Row>
             <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>
-                  Jersey Size <span className="text-danger">*</span>
-                </Form.Label>
-                <Form.Select
-                  name="jerseySize"
-                  value={formData.jerseySize}
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="">Select Jersey Size</option>
-                  <option value="XS">XS</option>
-                  <option value="S">S</option>
-                  <option value="M">M</option>
-                  <option value="L">L</option>
-                  <option value="XL">XL</option>
-                  <option value="XXL">XXL</option>
-                  <option value="3XL">3XL</option>
-                </Form.Select>
-              </Form.Group>
+
             </Col>
             
             <Col md={6}>
@@ -479,8 +459,7 @@ const RegistrationModal = ({ show, handleClose }) => {
                 <div className="col-6">{formData.aadhaarNumber}</div>
                 <div className="col-6"><strong>Player Type:</strong></div>
                 <div className="col-6">{formData.playerType}</div>
-                <div className="col-6"><strong>Jersey Size:</strong></div>
-                <div className="col-6">{formData.jerseySize}</div>
+
                 <div className="col-12 mt-2 pt-2 border-top">
                   <strong className="text-success fs-5">Total Amount: ₹500</strong>
                 </div>

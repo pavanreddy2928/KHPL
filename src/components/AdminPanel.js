@@ -58,7 +58,7 @@ const AdminPanel = ({ show, handleClose }) => {
         'Phone': reg.phoneNumber || reg.phone || '',
         'Aadhaar': reg.aadhaarNumber || reg.aadhaar || '',
         'Player Type': reg.playerType || '',
-        'Jersey Size': reg.jerseySize || '',
+
         'Registration Date': reg.registrationDate || new Date().toLocaleDateString(),
         'Payment Status': reg.paymentStatus || 'PENDING',
         'Status': reg.status || 'Pending'
@@ -76,7 +76,6 @@ const AdminPanel = ({ show, handleClose }) => {
         { wch: 15 }, // Phone
         { wch: 15 }, // Aadhaar
         { wch: 15 }, // Player Type
-        { wch: 12 }, // Jersey Size
         { wch: 20 }, // Registration Date
         { wch: 15 }, // Payment Status
         { wch: 12 }  // Status
@@ -314,7 +313,6 @@ const AdminPanel = ({ show, handleClose }) => {
                   <th>Phone</th>
                   <th>Aadhaar</th>
                   <th>Player Type</th>
-                  <th>Jersey Size</th>
                   <th>Amount</th>
                   <th>Payment Status</th>
                   <th>Registration Date</th>
@@ -335,9 +333,6 @@ const AdminPanel = ({ show, handleClose }) => {
                     </td>
                     <td>
                       <Badge bg="secondary">{reg.playerType || 'N/A'}</Badge>
-                    </td>
-                    <td>
-                      <Badge bg="outline-dark">{reg.jerseySize || 'N/A'}</Badge>
                     </td>
                     <td>
                       <Badge bg="info">₹{reg.amount || 500}</Badge>

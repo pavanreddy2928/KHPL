@@ -62,7 +62,7 @@ const RegistrationStatus = () => {
           phoneNumber: '9876543210',
           aadhaarNumber: '123456789012',
           playerType: 'Batsman',
-          jerseySize: 'M',
+
           amount: 500,
           paymentStatus: 'SUCCESS',
           status: 'Active',
@@ -246,12 +246,9 @@ const RegistrationStatus = () => {
                       <strong className="text-muted">Player Type:</strong>
                       <div className="fs-6">{searchResult.playerType}</div>
                     </div>
-                    
-                    <div className="mb-3">
-                      <strong className="text-muted">Jersey Size:</strong>
-                      <div className="fs-6">{searchResult.jerseySize}</div>
-                    </div>
-                    
+                  </Col>
+                  
+                  <Col md={6}>
                     <div className="mb-3">
                       <strong className="text-muted">Registration Fee:</strong>
                       <div className="fs-6">₹{searchResult.amount || 500}</div>

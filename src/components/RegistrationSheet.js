@@ -47,7 +47,6 @@ const RegistrationSheet = () => {
       { wch: 15 }, // Phone
       { wch: 15 }, // Aadhaar
       { wch: 15 }, // Player Type
-      { wch: 12 }, // Jersey Size
       { wch: 20 }, // Registration Date
       { wch: 15 }, // Image Name
       { wch: 10 }  // Status
@@ -108,7 +107,6 @@ const RegistrationSheet = () => {
                           <th style={{ width: '110px' }}>Phone</th>
                           <th style={{ width: '120px' }}>Aadhaar</th>
                           <th style={{ width: '90px' }}>Player Type</th>
-                          <th style={{ width: '70px' }}>Jersey</th>
                           <th style={{ width: '90px' }}>Amount</th>
                           <th style={{ width: '110px' }}>Payment</th>
                           <th style={{ width: '120px' }}>Date</th>
@@ -135,11 +133,6 @@ const RegistrationSheet = () => {
                             <td>
                               <Badge bg="secondary" className="small">
                                 {reg.playerType || 'N/A'}
-                              </Badge>
-                            </td>
-                            <td>
-                              <Badge bg="outline-dark" className="small">
-                                {reg.jerseySize || 'N/A'}
                               </Badge>
                             </td>
                             <td>
