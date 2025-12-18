@@ -41,16 +41,7 @@ const AdminPanel = ({ show, handleClose }) => {
       }
     } catch (error) {
       console.error('❌ Error loading registrations:', error);
-      
-      // Try localStorage as final fallback
-      try {
-        const localData = JSON.parse(localStorage.getItem('khplRegistrations') || '[]');
-        console.log('🔄 Fallback to localStorage:', localData.length, 'registrations');
-        setRegistrations(localData);
-      } catch (localError) {
-        console.error('❌ LocalStorage fallback failed:', localError);
-        setRegistrations([]);
-      }
+      setRegistrations([]);
     } finally {
       setIsLoading(false);
     }

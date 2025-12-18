@@ -166,43 +166,46 @@ export const saveRegistrationData = async (data) => {
     const s3Result = await saveToS3('registrations.json', existingData);
     
     if (s3Result.success) {
-      // Also save to localStorage as backup
-      localStorage.setItem('khplRegistrations', JSON.stringify(existingData));
+      console.log('✅ Registration saved to S3 successfully');
       return { success: true, storage: 'S3', data: newRegistration };
     } else {
-      // S3 save failed, using localStorage fallback
-      // Fallback to localStorage
-      const localData = JSON.parse(localStorage.getItem('khplRegistrations') || '[]');
-      const localRegistration = {
-        ...newRegistration,
-        id: newRegistration.id || `KHPL_LOCAL_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      };
-      localData.push(localRegistration);
-      localStorage.setItem('khplRegistrations', JSON.stringify(localData));
-      return { success: true, storage: 'localStorage', data: localRegistration };
+      console.error('❌ Failed to save registration to S3:', s3Result);
+      return { success: false, error: s3Result.error || 'S3 save failed', data: null };
     }
   } catch (error) {
     return { success: false, error: error.message };
   }
 };
 
-// Enhanced load function with fallback to localStorage
+// Enhanced load function - S3 only
 export const loadRegistrationData = async () => {
   try {
-    // Try S3 first
+    console.log('🔍 Loading registration data from S3...');
+    console.log('📊 S3 Config:', {
+      enabled: S3_CONFIG.enabled,
+      region: S3_CONFIG.region,
+      bucket: S3_CONFIG.bucketName,
+      hasAccessKey: !!S3_CONFIG.accessKeyId,
+      hasSecretKey: !!S3_CONFIG.secretAccessKey
+    });
+    
+    // Only try S3 - no localStorage fallback
     const s3Data = await loadFromS3('registrations.json');
+    console.log('📊 Raw S3 data received:', s3Data);
+    console.log('📊 Data type:', typeof s3Data);
+    console.log('📊 Is array:', Array.isArray(s3Data));
+    console.log('📊 Data length:', s3Data ? s3Data.length : 0);
     
     if (s3Data && Array.isArray(s3Data)) {
-      // Loaded registration data from AWS S3
-      // Update localStorage as backup
-      localStorage.setItem('khplRegistrations', JSON.stringify(s3Data));
+      console.log('✅ Successfully loaded', s3Data.length, 'registrations from S3');
       return s3Data;
+    } else {
+      console.log('⚠️ No valid S3 data found or empty array');
+      return [];
     }
-    
-    //
   } catch (error) {
-    // Final fallback to localStorage
-    console.log('Falling back to localStorage for registration data');
+    console.error('❌ Error loading from S3:', error);
+    return [];
   }
 };
 
