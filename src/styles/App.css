@@ -1,20 +1,27 @@
 .App {
   text-align: center;
+  background: transparent;
+  min-height: 100vh;
+  position: relative;
 }
 
 .hero-section {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: transparent;
   min-height: 60vh;
   display: flex;
   align-items: center;
+  position: relative;
+  overflow: hidden;
 }
 
+
+
 .registration-section {
-  background: linear-gradient(135deg, #4158D0 0%, #C850C0 100%);
+  background: transparent;
 }
 
 .social-section {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: transparent;
 }
 
 .social-icons .btn {
@@ -35,37 +42,173 @@
   opacity: 0.8;
 }
 
-/* Responsive adjustments */
+/* Karnataka architectural and cultural pattern */
+.container {
+  position: relative;
+}
+
+.container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    /* Hoysala architecture inspired patterns */
+    radial-gradient(circle at 15% 25%, rgba(139, 69, 19, 0.06) 0%, transparent 25%),
+    radial-gradient(circle at 85% 75%, rgba(205, 133, 63, 0.06) 0%, transparent 25%),
+    radial-gradient(circle at 50% 50%, rgba(218, 165, 32, 0.04) 0%, transparent 30%),
+    /* Virupaksha temple geometric patterns */
+    repeating-conic-gradient(from 0deg at 30% 70%, transparent 0deg, rgba(178, 34, 34, 0.03) 30deg, transparent 60deg),
+    repeating-conic-gradient(from 45deg at 70% 30%, transparent 0deg, rgba(34, 139, 34, 0.03) 45deg, transparent 90deg),
+    /* Traditional Karnataka rangoli patterns */
+    linear-gradient(45deg, transparent 48%, rgba(139, 69, 19, 0.02) 49%, rgba(139, 69, 19, 0.02) 51%, transparent 52%),
+    linear-gradient(-45deg, transparent 48%, rgba(218, 165, 32, 0.02) 49%, rgba(218, 165, 32, 0.02) 51%, transparent 52%);
+  background-size: 250px 250px, 300px 300px, 400px 400px, 180px 180px, 220px 220px, 80px 80px, 100px 100px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Typography with Karnataka cultural essence */
+h1, h2, h3, h4, h5, h6 {
+  color: #654321;
+  text-shadow: 
+    1px 1px 3px rgba(255, 215, 0, 0.4),
+    2px 2px 6px rgba(139, 69, 19, 0.2);
+  font-weight: 600;
+}
+
+.text-white h1, .text-white h2, .text-white h3, .text-white h4, .text-white h5, .text-white h6 {
+  color: white !important;
+  text-shadow: 
+    2px 2px 4px rgba(139, 69, 19, 0.6),
+    1px 1px 8px rgba(0, 0, 0, 0.3),
+    0 0 12px rgba(255, 215, 0, 0.2);
+}
+
+/* Karnataka traditional text decorations */
+h1::before, h2::before {
+  content: '🏛️';
+  margin-right: 8px;
+  opacity: 0.7;
+}
+
+.hero-section h1::before {
+  content: '';
+}
+
+/* Alert boxes Karnataka theme */
+.alert {
+  border: 2px solid rgba(139, 69, 19, 0.2);
+  background: linear-gradient(145deg, rgba(255, 248, 220, 0.9), rgba(255, 255, 255, 0.9));
+}
+
+.alert-success {
+  border-color: rgba(34, 139, 34, 0.3);
+  background: linear-gradient(145deg, rgba(144, 238, 144, 0.2), rgba(255, 255, 255, 0.9));
+}
+
+.alert-danger {
+  border-color: rgba(220, 20, 60, 0.3);
+  background: linear-gradient(145deg, rgba(255, 182, 193, 0.2), rgba(255, 255, 255, 0.9));
+}
+
+/* Responsive adjustments with Karnataka theme */
 @media (max-width: 768px) {
   .hero-section h1 {
     font-size: 2.5rem;
+    text-shadow: 2px 2px 4px rgba(139, 69, 19, 0.5);
   }
   
   .hero-section h2 {
     font-size: 1.5rem;
+    text-shadow: 1px 1px 3px rgba(139, 69, 19, 0.4);
   }
   
   .social-icons .btn {
     margin: 0.25rem;
     padding: 0.5rem;
+    background: rgba(139, 69, 19, 0.15);
+  }
+  
+  .hero-section::before {
+    height: 100px;
   }
 }
 
-/* Card animations */
+/* Karnataka theme cards */
 .card {
   transition: all 0.3s ease;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 248, 220, 0.9));
+  border: 2px solid rgba(139, 69, 19, 0.2);
+  box-shadow: 0 4px 15px rgba(139, 69, 19, 0.1);
 }
 
 .card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  box-shadow: 0 12px 30px rgba(139, 69, 19, 0.25);
+  border-color: rgba(184, 134, 11, 0.4);
 }
 
-/* Button animations */
+/* Karnataka theme buttons */
 .btn {
   transition: all 0.3s ease;
 }
 
-.btn:hover {
-  transform: translateY(-1px);
+.btn-primary {
+  background: linear-gradient(135deg, #B8860B 0%, #DAA520 50%, #CD853F 100%);
+  border: none;
+  color: white;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #8B4513 0%, #A0522D 50%, #8B4513 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(139, 69, 19, 0.3);
+}
+
+.btn-outline-light {
+  border-color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(139, 69, 19, 0.1);
+}
+
+.btn-outline-light:hover {
+  background: rgba(255, 255, 255, 0.95);
+  color: #8B4513;
+  border-color: #DAA520;
+}
+
+/* Modal Karnataka theme */
+.modal-header {
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%) !important;
+  border-bottom: 2px solid rgba(139, 69, 19, 0.3);
+}
+
+.modal-body {
+  background: linear-gradient(145deg, rgba(255, 248, 220, 0.95), rgba(255, 255, 255, 0.95));
+}
+
+.modal-footer {
+  background: linear-gradient(145deg, rgba(255, 248, 220, 0.95), rgba(255, 255, 255, 0.95));
+  border-top: 2px solid rgba(139, 69, 19, 0.2);
+}
+
+/* Form elements Karnataka theme */
+.form-control {
+  border: 2px solid rgba(139, 69, 19, 0.2);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.form-control:focus {
+  border-color: #DAA520;
+  box-shadow: 0 0 0 0.2rem rgba(218, 165, 32, 0.25);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* Footer Karnataka theme */
+.bg-dark {
+  background: linear-gradient(135deg, #8B4513 0%, #A0522D 50%, #654321 100%) !important;
 }

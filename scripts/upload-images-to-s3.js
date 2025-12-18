@@ -47,6 +47,12 @@ async function uploadAllImages() {
     'images/KHPL-QR-CODE.jpeg'
   );
   
+  // Upload Main Background
+  await uploadImage(
+    path.join(__dirname, '../src/mainbackground.jpeg'),
+    'images/mainbackground.jpeg'
+  );
+  
   console.log('🎯 Image upload process completed!');
 }
 

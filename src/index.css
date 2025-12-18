@@ -5,6 +5,27 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 25%, #FF8C00 50%, #DAA520 75%, #B8860B 100%);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Karnataka theme overlay for better readability */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    rgba(0, 0, 0, 0.1),
+    rgba(255, 215, 0, 0.05),
+    rgba(255, 165, 0, 0.1)
+  );
+  pointer-events: none;
+  z-index: 0;
 }
 
 code {
@@ -12,22 +33,22 @@ code {
     monospace;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - Karnataka theme */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: rgba(255, 215, 0, 0.2);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #667eea;
+  background: linear-gradient(135deg, #B8860B, #DAA520);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: linear-gradient(135deg, #8B4513, #A0522D);
 }
 
 /* Smooth scrolling */
