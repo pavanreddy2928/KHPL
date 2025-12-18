@@ -21,25 +21,71 @@ const AdminPanel = ({ show, handleClose }) => {
   const loadRegistrations = async () => {
     setIsLoading(true);
     try {
+      console.log('🔍 Loading registrations data...');
+      
       // Load from S3 with localStorage fallback
       const data = await loadRegistrationData();
+      
+      console.log('📊 Raw data received:', data);
+      console.log('📊 Data type:', typeof data);
+      console.log('📊 Is array:', Array.isArray(data));
+      console.log('📊 Data length:', data ? data.length : 0);
       
       if (data && Array.isArray(data)) {
         setRegistrations(data);
         setLastUpdated(new Date());
+        console.log('✅ Successfully loaded', data.length, 'registrations');
       } else {
         setRegistrations([]);
+        console.log('⚠️ No valid registration data found');
       }
     } catch (error) {
+      console.error('❌ Error loading registrations:', error);
+      
       // Try localStorage as final fallback
       try {
         const localData = JSON.parse(localStorage.getItem('khplRegistrations') || '[]');
+        console.log('🔄 Fallback to localStorage:', localData.length, 'registrations');
         setRegistrations(localData);
       } catch (localError) {
+        console.error('❌ LocalStorage fallback failed:', localError);
         setRegistrations([]);
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const addTestRegistration = () => {
+    const testRegistration = {
+      id: Date.now(),
+      name: 'Test Player',
+      email: 'test@example.com',
+      phone: '9876543210',
+      age: '25',
+      team: 'Test Team',
+      city: 'Bangalore',
+      aadhaarFile: null,
+      timestamp: new Date().toISOString()
+    };
+    
+    try {
+      const existingData = JSON.parse(localStorage.getItem('khplRegistrations') || '[]');
+      existingData.push(testRegistration);
+      localStorage.setItem('khplRegistrations', JSON.stringify(existingData));
+      loadRegistrations(); // Reload the data
+      alert('Test registration added successfully!');
+    } catch (error) {
+      console.error('Error adding test registration:', error);
+      alert('Error adding test registration');
+    }
+  };
+
+  const clearLocalStorage = () => {
+    if (window.confirm('Are you sure you want to clear all localStorage data?')) {
+      localStorage.removeItem('khplRegistrations');
+      setRegistrations([]);
+      alert('LocalStorage cleared successfully!');
     }
   };
 
@@ -301,6 +347,53 @@ const AdminPanel = ({ show, handleClose }) => {
             <i className="fas fa-users fa-3x text-muted mb-3"></i>
             <h5 className="text-muted">No registrations found</h5>
             <p className="text-muted">Registration data will appear here once users start registering.</p>
+            
+            {/* Debug Information */}
+            <div className="mt-4 p-3 bg-light border rounded">
+              <h6 className="text-primary">Debug Information</h6>
+              <p className="small mb-2">
+                <strong>S3 Storage Enabled:</strong> {process.env.REACT_APP_S3_STORAGE === 'true' ? 'Yes' : 'No'}
+              </p>
+              <p className="small mb-2">
+                <strong>AWS Region:</strong> {process.env.REACT_APP_AWS_REGION || 'Not configured'}
+              </p>
+              <p className="small mb-2">
+                <strong>S3 Bucket:</strong> {process.env.REACT_APP_S3_BUCKET_NAME || 'Not configured'}
+              </p>
+              <p className="small mb-2">
+                <strong>AWS Access Key:</strong> {process.env.REACT_APP_AWS_ACCESS_KEY_ID ? 'Configured' : 'Not configured'}
+              </p>
+              <p className="small mb-2">
+                <strong>LocalStorage Data:</strong> {
+                  (() => {
+                    try {
+                      const localData = JSON.parse(localStorage.getItem('khplRegistrations') || '[]');
+                      return localData.length + ' registrations';
+                    } catch {
+                      return 'No valid data';
+                    }
+                  })()
+                }
+              </p>
+              <p className="small text-info">
+                💡 <strong>Solution:</strong> Create a .env file with AWS credentials or test registration locally
+              </p>
+              
+              <div className="mt-3">
+                <button 
+                  className="btn btn-sm btn-outline-primary me-2"
+                  onClick={addTestRegistration}
+                >
+                  Add Test Registration
+                </button>
+                <button 
+                  className="btn btn-sm btn-outline-warning"
+                  onClick={clearLocalStorage}
+                >
+                  Clear LocalStorage
+                </button>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="table-responsive">

@@ -5,7 +5,7 @@ import { S3Client, PutObjectCommand, GetObjectCommand, HeadObjectCommand } from 
 
 // AWS S3 Configuration
 const S3_CONFIG = {
-  region: process.env.REACT_APP_AWS_REGION || 'us-east-1', // Change to your preferred region
+  region: process.env.REACT_APP_AWS_REGION || 'ap-south-1', // Change to your preferred region
   bucketName: process.env.REACT_APP_S3_BUCKET_NAME || 'khpl-registration-data-unique-name',
   accessKeyId: process.env.REACT_APP_AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.REACT_APP_AWS_SECRET_ACCESS_KEY,
@@ -199,14 +199,10 @@ export const loadRegistrationData = async () => {
       return s3Data;
     }
     
-    // Fallback to localStorage
-    // Loading registration data from localStorage (S3 fallback)
-    const localData = JSON.parse(localStorage.getItem('khplRegistrations') || '[]');
-    return localData;
+    //
   } catch (error) {
     // Final fallback to localStorage
-    const localData = JSON.parse(localStorage.getItem('khplRegistrations') || '[]');
-    return localData;
+    console.log('Falling back to localStorage for registration data');
   }
 };
 
