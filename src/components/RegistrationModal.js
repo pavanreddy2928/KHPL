@@ -186,7 +186,7 @@ const RegistrationModal = ({ show, handleClose }) => {
           registrationId: newRecord.id,
           transactionId: paymentResult.transactionId,
           playerName: registrationData.name,
-          phoneNumber: registrationData.phone,
+          phoneNumber: registrationData.phoneNumber,
           amount: 999,
           registrationDate: new Date().toLocaleDateString()
         });
@@ -423,10 +423,30 @@ const RegistrationModal = ({ show, handleClose }) => {
                   </Form.Text>
                   {formData.aadhaarCopy && (
                     <div className="mt-2">
-                      <Badge bg="success">
+                      <Badge bg="success" className="mb-2">
                         <i className="fas fa-check-circle me-1"></i>
                         Aadhaar copy uploaded
                       </Badge>
+                      {formData.aadhaarCopy.startsWith('data:image/') && (
+                        <div className="border rounded p-2 bg-light">
+                          <img 
+                            src={formData.aadhaarCopy} 
+                            alt="Aadhaar Copy Preview" 
+                            className="img-fluid rounded"
+                            style={{maxHeight: '150px', maxWidth: '100%', objectFit: 'contain'}}
+                          />
+                          <div className="text-center mt-2">
+                            <small className="text-muted">Aadhaar Copy Preview</small>
+                          </div>
+                        </div>
+                      )}
+                      {formData.aadhaarCopy.startsWith('data:application/pdf') && (
+                        <div className="border rounded p-3 bg-light text-center">
+                          <i className="fas fa-file-pdf fa-3x text-danger mb-2"></i>
+                          <div className="small text-muted">PDF Document Uploaded</div>
+                          <div className="small text-muted">Preview not available for PDF files</div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </Form.Group>
@@ -446,6 +466,25 @@ const RegistrationModal = ({ show, handleClose }) => {
                   <Form.Text className="text-muted">
                     Upload your photo (JPG, PNG, GIF - Max 5MB)
                   </Form.Text>
+                  {formData.userPhoto && (
+                    <div className="mt-2">
+                      <Badge bg="success" className="mb-2">
+                        <i className="fas fa-check-circle me-1"></i>
+                        Profile photo uploaded
+                      </Badge>
+                      <div className="border rounded p-2 bg-light">
+                        <img 
+                          src={formData.userPhoto} 
+                          alt="Profile Photo Preview" 
+                          className="img-fluid rounded"
+                          style={{maxHeight: '150px', maxWidth: '100%', objectFit: 'cover'}}
+                        />
+                        <div className="text-center mt-2">
+                          <small className="text-muted">Profile Photo Preview</small>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </Form.Group>
               </Col>
             </Row>
@@ -656,10 +695,6 @@ const RegistrationModal = ({ show, handleClose }) => {
                 <div className="col-7">{successData?.phoneNumber}</div>
                 <div className="col-5"><strong>Registration ID:</strong></div>
                 <div className="col-7">#{successData?.registrationId}</div>
-                <div className="col-5"><strong>Transaction ID:</strong></div>
-                <div className="col-7">{successData?.transactionId}</div>
-                <div className="col-5"><strong>Amount Paid:</strong></div>
-                <div className="col-7">₹{successData?.amount}</div>
                 <div className="col-5"><strong>Registration Date:</strong></div>
                 <div className="col-7">{successData?.registrationDate}</div>
               </div>
