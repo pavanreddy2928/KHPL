@@ -1,7 +1,6 @@
 import React from 'react';
 import { Container, Row, Col, Button } from 'react-bootstrap';
-import { FaInstagram, FaYoutube, FaFacebookF } from 'react-icons/fa';
-import { FaXTwitter } from 'react-icons/fa6';
+import { FaInstagram } from 'react-icons/fa';
 
 const Hero = () => {
   return (
@@ -22,24 +21,23 @@ const Hero = () => {
               Karnataka Hardball Premier League
             </h1>
             <h2 className="h3 mb-4">
-              🏏 Karnataka's Premier
+              🏏 Karnataka Biggest
               <br />
               Hardball Cricket League
             </h2>
             
             {/* Social Media Icons */}
             <div className="social-icons mb-4">
-              <Button variant="outline-light" className="rounded-circle me-3 p-3">
+              <Button 
+                variant="outline-light" 
+                className="rounded-circle p-3"
+                as="a"
+                href="https://www.instagram.com/khpl_s1?igsh=MXc2cDM2NmRnZHR0dw=="
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Follow us on Instagram"
+              >
                 <FaInstagram size={24} />
-              </Button>
-              <Button variant="outline-light" className="rounded-circle me-3 p-3">
-                <FaYoutube size={24} />
-              </Button>
-              <Button variant="outline-light" className="rounded-circle me-3 p-3">
-                <FaFacebookF size={24} />
-              </Button>
-              <Button variant="outline-light" className="rounded-circle p-3">
-                <FaXTwitter size={24} />
               </Button>
             </div>
           </Col>

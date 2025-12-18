@@ -206,7 +206,7 @@ const ContactUs = () => {
               <Card.Body className="p-4">
                 <h5 className="fw-bold mb-3">Karnataka Hardball Premier League</h5>
                 <p className="text-muted mb-0">
-                  Join Karnataka's premier hardball cricket league and be part of the excitement!
+                  Join Karnataka's biggest hardball cricket league and be part of the excitement!
                 </p>
               </Card.Body>
             </Card>
