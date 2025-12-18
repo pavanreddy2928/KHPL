@@ -1,15 +1,23 @@
 {
   "short_name": "KHPL",
-  "name": "Karnataka Hardball Premier League",
+  "name": "Karnataka Biggest Hardball Cricket League",
+  "description": "Join Karnataka's biggest hardball cricket league! Register now for KHPL.",
   "icons": [
     {
       "src": "favicon.ico",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
+    },
+    {
+      "src": "khpl.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
     }
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#667eea",
+  "background_color": "#ffffff",
+  "categories": ["sports", "cricket", "tournament"],
+  "orientation": "portrait"
 }
