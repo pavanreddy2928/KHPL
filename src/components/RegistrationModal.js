@@ -186,16 +186,12 @@ const RegistrationModal = ({ show, handleClose }) => {
           registrationId: newRecord.id,
           transactionId: paymentResult.transactionId,
           playerName: registrationData.name,
+          phoneNumber: registrationData.phone,
           amount: 999,
           registrationDate: new Date().toLocaleDateString()
         });
         setShowPaymentScreen(false);
         setShowSuccessScreen(true);
-        
-        // Auto-close after 5 seconds
-        setTimeout(() => {
-          handleModalClose();
-        }, 5000);
         
       } else {
         throw new Error(paymentResult.error || 'Payment failed');
@@ -308,7 +304,7 @@ const RegistrationModal = ({ show, handleClose }) => {
   };
 
   return (
-    <Modal show={show} onHide={handleModalClose} size="lg" centered>
+    <Modal show={show} onHide={handleModalClose} size="lg" centered backdrop="static" keyboard={false}>
       <Modal.Header closeButton className="bg-primary text-white">
         <Modal.Title>
           <i className="fas fa-cricket-ball me-2"></i>
@@ -656,6 +652,8 @@ const RegistrationModal = ({ show, handleClose }) => {
               <div className="row text-start">
                 <div className="col-5"><strong>Player Name:</strong></div>
                 <div className="col-7">{successData?.playerName}</div>
+                <div className="col-5"><strong>Phone Number:</strong></div>
+                <div className="col-7">{successData?.phoneNumber}</div>
                 <div className="col-5"><strong>Registration ID:</strong></div>
                 <div className="col-7">#{successData?.registrationId}</div>
                 <div className="col-5"><strong>Transaction ID:</strong></div>
