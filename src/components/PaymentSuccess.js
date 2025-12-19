@@ -56,7 +56,7 @@ const PaymentSuccess = () => {
         paymentStatus: status,
         status: status === 'SUCCESS' ? 'Active' : 'Payment Failed'
       });
-      console.log('Payment status updated in DynamoDB');
+      console.log('Che status updated in DynamoDB');
     } catch (error) {
       console.error('Failed to update payment status in DynamoDB:', error);
     }

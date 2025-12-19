@@ -63,6 +63,7 @@ const AdminPanel = ({ show, handleClose }) => {
       name: 'Test Player',
       email: 'test@example.com',
       phone: '9876543210',
+      district: 'Bangalore Urban',
       age: '25',
       team: 'Test Team',
       city: 'Bangalore',
@@ -103,6 +104,7 @@ const AdminPanel = ({ show, handleClose }) => {
         'Name': reg.name || '',
         'Email': reg.email || '',
         'Phone': reg.phoneNumber || reg.phone || '',
+        'District': reg.district || '',
         'Aadhaar Copy': reg.aadhaarCopy ? 'Uploaded' : 'Not Uploaded',
         'Player Type': reg.playerType || '',
 
@@ -121,6 +123,7 @@ const AdminPanel = ({ show, handleClose }) => {
         { wch: 20 }, // Name
         { wch: 30 }, // Email  
         { wch: 15 }, // Phone
+        { wch: 15 }, // District
         { wch: 15 }, // Aadhaar Copy
         { wch: 15 }, // Player Type
         { wch: 20 }, // Registration Date
@@ -500,6 +503,7 @@ const AdminPanel = ({ show, handleClose }) => {
                   <th>Name</th>
                   <th>Email</th>
                   <th>Phone</th>
+                  <th>District</th>
                   <th>Aadhaar Copy</th>
                   <th>Player Type</th>
                   <th>Amount</th>
@@ -517,6 +521,9 @@ const AdminPanel = ({ show, handleClose }) => {
                     <td>{reg.name}</td>
                     <td>{reg.email}</td>
                     <td>{reg.phoneNumber}</td>
+                    <td>
+                      <Badge bg="info">{reg.district || 'N/A'}</Badge>
+                    </td>
                     <td>
                       <Badge bg={reg.aadhaarCopy ? 'success' : 'warning'}>
                         {reg.aadhaarCopy ? 'Uploaded' : 'Missing'}

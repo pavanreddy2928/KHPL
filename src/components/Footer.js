@@ -25,7 +25,7 @@ const Footer = () => {
         <Row>
           <Col className="text-center">
             <p className="mb-0 text-muted">
-              &copy; 2024 Karnataka Hardball Premier League. All rights reserved.
+              &copy; 2026 Karnataka Hardball Premier League. All rights reserved.
             </p>
           </Col>
         </Row>

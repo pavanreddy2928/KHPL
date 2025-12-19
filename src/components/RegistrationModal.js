@@ -19,6 +19,7 @@ const RegistrationModal = ({ show, handleClose }) => {
     name: '',
     email: '',
     phoneNumber: '',
+    district: '',
     aadhaarCopy: null,
     playerType: '',
     image: null,
@@ -45,6 +46,7 @@ const RegistrationModal = ({ show, handleClose }) => {
       name: '', 
       email: '', 
       phoneNumber: '', 
+      district: '',
       aadhaarCopy: null, 
       playerType: '', 
       image: null, 
@@ -147,6 +149,7 @@ const RegistrationModal = ({ show, handleClose }) => {
         name: data.name || '',
         email: data.email || '',
         phoneNumber: data.phoneNumber || '',
+        district: data.district || '',
         playerType: data.playerType || '',
         aadhaarNumber: data.aadhaarNumber || '',
         city: data.city || '',
@@ -444,8 +447,8 @@ const RegistrationModal = ({ show, handleClose }) => {
     e.preventDefault();
     
     // Validation
-    if (!formData.name || !formData.email || !formData.phoneNumber || !formData.aadhaarCopy || !formData.playerType || !formData.image) {
-      setAlertMessage('Please fill in all required fields including Aadhaar copy, player type, and upload an image.');
+    if (!formData.name || !formData.email || !formData.phoneNumber || !formData.district || !formData.aadhaarCopy || !formData.playerType || !formData.image) {
+      setAlertMessage('Please fill in all required fields including district, Aadhaar copy, player type, and upload an image.');
       setAlertVariant('danger');
       setShowAlert(true);
       return;
@@ -551,6 +554,24 @@ const RegistrationModal = ({ show, handleClose }) => {
                 </Form.Group>
               </Col>
               
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>
+                    District <span className="text-danger">*</span>
+                  </Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="district"
+                    value={formData.district}
+                    onChange={handleInputChange}
+                    placeholder="Enter your district"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+            
+            <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>

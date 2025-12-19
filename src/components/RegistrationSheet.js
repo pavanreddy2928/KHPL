@@ -44,6 +44,7 @@ const RegistrationSheet = () => {
       { wch: 20 }, // Name
       { wch: 30 }, // Email  
       { wch: 15 }, // Phone
+      { wch: 15 }, // District
       { wch: 15 }, // Aadhaar Copy
       { wch: 15 }, // Player Type
       { wch: 20 }, // Registration Date
@@ -104,6 +105,7 @@ const RegistrationSheet = () => {
                           <th style={{ width: '140px' }}>Name</th>
                           <th style={{ width: '170px' }}>Email</th>
                           <th style={{ width: '110px' }}>Phone</th>
+                          <th style={{ width: '100px' }}>District</th>
                           <th style={{ width: '120px' }}>Aadhaar Copy</th>
                           <th style={{ width: '90px' }}>Player Type</th>
                           <th style={{ width: '90px' }}>Amount</th>
@@ -126,6 +128,11 @@ const RegistrationSheet = () => {
                             <td className="fw-semibold">{reg.name}</td>
                             <td>{reg.email}</td>
                             <td>{reg.phoneNumber}</td>
+                            <td>
+                              <Badge bg="info" className="small">
+                                {reg.district || 'N/A'}
+                              </Badge>
+                            </td>
                             <td>
                               <Badge bg={reg.aadhaarCopy ? 'success' : 'warning'} className="small">
                                 {reg.aadhaarCopy ? 'Uploaded' : 'Missing'}
