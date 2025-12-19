@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Table, Badge, Row, Col, Image, Tabs, Tab } from 'react-bootstrap';
 import * as XLSX from 'xlsx';
-import { loadRegistrationData, verifyS3Access } from '../utils/awsS3Storage';
+import { verifyS3Access } from '../utils/awsS3Storage';
+import { loadRegistrationsFromDynamoDB } from '../utils/dynamoDBStorage';
+import { loadRegistrationImageFromS3 } from '../utils/registrationImageUpload';
 import RegistrationSheet from './RegistrationSheet';
 import ImageUploadManager from './ImageUploadManager';
 
@@ -23,10 +25,18 @@ const AdminPanel = ({ show, handleClose }) => {
     try {
       console.log('🔍 Loading registrations data...');
       
-      // Load from S3 with localStorage fallback
-      const data = await loadRegistrationData();
+      // Try DynamoDB first
+      console.log('📊 Attempting to load from DynamoDB...');
+      let data = await loadRegistrationsFromDynamoDB();
       
-      console.log('📊 Raw data received:', data);
+      if (data && Array.isArray(data) && data.length > 0) {
+        console.log('✅ Successfully loaded', data.length, 'registrations from DynamoDB');
+      } else {
+        console.log('⚠️ No DynamoDB data found');
+        data = [];
+      }
+      
+      console.log('📊 Final data received:', data);
       console.log('📊 Data type:', typeof data);
       console.log('📊 Is array:', Array.isArray(data));
       console.log('📊 Data length:', data ? data.length : 0);
@@ -47,38 +57,38 @@ const AdminPanel = ({ show, handleClose }) => {
     }
   };
 
-  const addTestRegistration = () => {
+  const addTestRegistration = async () => {
     const testRegistration = {
-      id: Date.now(),
+      id: `KHPL_${Date.now()}_TEST`,
       name: 'Test Player',
       email: 'test@example.com',
       phone: '9876543210',
       age: '25',
       team: 'Test Team',
       city: 'Bangalore',
-      aadhaarFile: null,
-      timestamp: new Date().toISOString()
+      registrationDate: new Date().toLocaleString(),
+      status: 'Test Registration',
+      amount: 999,
+      paymentStatus: 'COMPLETED'
     };
     
     try {
-      const existingData = JSON.parse(localStorage.getItem('khplRegistrations') || '[]');
-      existingData.push(testRegistration);
-      localStorage.setItem('khplRegistrations', JSON.stringify(existingData));
-      loadRegistrations(); // Reload the data
-      alert('Test registration added successfully!');
+      const { saveRegistrationToDynamoDB } = await import('../utils/dynamoDBStorage');
+      const result = await saveRegistrationToDynamoDB(testRegistration);
+      
+      if (result.success) {
+        loadRegistrations(); // Reload the data
+        alert('Test registration added successfully to DynamoDB!');
+      } else {
+        alert('Failed to add test registration: ' + result.error);
+      }
     } catch (error) {
       console.error('Error adding test registration:', error);
-      alert('Error adding test registration');
+      alert('Error adding test registration: ' + error.message);
     }
   };
 
-  const clearLocalStorage = () => {
-    if (window.confirm('Are you sure you want to clear all localStorage data?')) {
-      localStorage.removeItem('khplRegistrations');
-      setRegistrations([]);
-      alert('LocalStorage cleared successfully!');
-    }
-  };
+
 
   const exportAllToExcel = () => {
     if (registrations.length === 0) {
@@ -129,37 +139,124 @@ const AdminPanel = ({ show, handleClose }) => {
     }
   };
 
-  const clearAllData = async () => {
-    if (window.confirm('Are you sure you want to clear all registration data? This action cannot be undone.')) {
+  const clearAllRegistrations = async () => {
+    if (window.confirm('⚠️ Are you sure you want to DELETE ALL registration data?\n\nThis will permanently delete:\n• All registration records from DynamoDB\n• All uploaded images from S3\n• All payment data\n\nThis action CANNOT be undone!')) {
       try {
-        // Clear S3 storage by saving empty array
-        const { saveToS3 } = await import('../utils/awsS3Storage');
-        const result = await saveToS3('registrations.json', []);
+        console.log('🗑️ Starting complete data clearing process...');
         
-        if (!result.success) {
-          // S3 clear failed, but continue with local clear
+        // Step 1: Delete all registrations from DynamoDB
+        const { deleteAllRegistrations } = await import('../utils/dynamoDBStorage');
+        console.log('📡 Clearing DynamoDB registrations...');
+        const dbResult = await deleteAllRegistrations();
+        
+        console.log('📊 DynamoDB clear result:', dbResult);
+        
+        // Step 2: Clear S3 images (if S3 is configured)
+        let s3Result = { success: true, message: 'S3 not configured - skipped' };
+        try {
+          // Note: Individual S3 image deletion would require listing all objects
+          // For now, we'll note that S3 images remain but registrations are deleted
+          console.log('ℹ️ S3 image cleanup not implemented - images remain in storage');
+        } catch (s3Error) {
+          console.warn('⚠️ S3 cleanup warning:', s3Error.message);
         }
         
-        // Clear localStorage
-        localStorage.removeItem('khplRegistrations');
-        
-        // Update UI
+        // Step 3: Update UI immediately
         setRegistrations([]);
         setLastUpdated(new Date());
         
-        alert('All registration data has been cleared successfully!');
-      } catch (error) {
-        // Clear at least localStorage as fallback
-        localStorage.removeItem('khplRegistrations');
-        setRegistrations([]);
+        // Step 4: Show comprehensive result
+        if (dbResult.success) {
+          alert(`✅ Successfully cleared all data!\n\n• Deleted ${dbResult.deletedCount} registrations from database\n• UI data cleared\n\nNote: S3 images may remain and need manual cleanup`);
+        } else if (dbResult.deletedCount > 0) {
+          alert(`⚠️ Partial success:\n\n• Deleted ${dbResult.deletedCount} of ${dbResult.totalCount} registrations\n• ${dbResult.failedCount} deletions failed\n• UI data cleared\n\nError: ${dbResult.error || 'Some deletions failed'}`);
+        } else {
+          alert(`❌ Failed to clear database data:\n\n• Error: ${dbResult.error}\n• UI data cleared locally\n\nDatabase may still contain records.`);
+        }
         
-        alert('Data cleared from local storage. S3 clear may have failed.');
+      } catch (error) {
+        console.error('❌ Clear all registrations failed:', error);
+        
+        // Still clear UI even if backend operations failed
+        setRegistrations([]);
+        setLastUpdated(new Date());
+        
+        alert(`❌ Error during data clearing: ${error.message}\n\nUI data cleared, but database records may remain.`);
       }
     }
   };
 
-  const viewAttachments = (registration) => {
-    setSelectedUser(registration);
+  const viewAttachments = async (registration) => {
+    console.log('🔍 Loading attachments for registration:', registration.id);
+    
+    // If registration has image upload results, load images from S3
+    if (registration.imageUploadResults && registration.imageUploadStatus === 'completed') {
+      console.log('📁 Loading images from S3 using upload results...');
+      
+      const updatedRegistration = { ...registration };
+      
+      // Load images from S3 in parallel
+      const imagePromises = [];
+      
+      if (registration.imageUploadResults.aadhaar?.s3Key) {
+        imagePromises.push(
+          loadRegistrationImageFromS3(registration.imageUploadResults.aadhaar.s3Key)
+            .then(url => ({ type: 'aadhaar', url }))
+            .catch(error => ({ type: 'aadhaar', error: error.message }))
+        );
+      }
+      
+      if (registration.imageUploadResults.userPhoto?.s3Key) {
+        imagePromises.push(
+          loadRegistrationImageFromS3(registration.imageUploadResults.userPhoto.s3Key)
+            .then(url => ({ type: 'userPhoto', url }))
+            .catch(error => ({ type: 'userPhoto', error: error.message }))
+        );
+      }
+      
+      if (registration.imageUploadResults.paymentScreenshot?.s3Key) {
+        imagePromises.push(
+          loadRegistrationImageFromS3(registration.imageUploadResults.paymentScreenshot.s3Key)
+            .then(url => ({ type: 'paymentScreenshot', url }))
+            .catch(error => ({ type: 'paymentScreenshot', error: error.message }))
+        );
+      }
+      
+      try {
+        const imageResults = await Promise.all(imagePromises);
+        
+        // Update registration with loaded image URLs
+        imageResults.forEach(result => {
+          if (result.url) {
+            switch (result.type) {
+              case 'aadhaar':
+                updatedRegistration.aadhaarCopyUrl = result.url;
+                break;
+              case 'userPhoto':
+                updatedRegistration.userPhotoUrl = result.url;
+                break;
+              case 'paymentScreenshot':
+                updatedRegistration.paymentScreenshotUrl = result.url;
+                break;
+            }
+            console.log(`✅ Loaded ${result.type} from S3:`, result.url);
+          } else if (result.error) {
+            console.error(`❌ Failed to load ${result.type}:`, result.error);
+          }
+        });
+        
+        updatedRegistration.s3ImagesLoaded = true;
+      } catch (error) {
+        console.error('❌ Error loading images from S3:', error);
+        updatedRegistration.s3LoadError = error.message;
+      }
+      
+      setSelectedUser(updatedRegistration);
+    } else {
+      // Use existing base64 images or S3 URLs
+      setSelectedUser(registration);
+    }
+    
     setShowAttachmentsModal(true);
   };
 
@@ -181,19 +278,17 @@ const AdminPanel = ({ show, handleClose }) => {
       
       setRegistrations(updatedRegistrations);
       
-      // Try to save to S3
+      // Update in DynamoDB
       try {
-        const { saveToS3 } = await import('../utils/awsS3Storage');
-        const result = await saveToS3('registrations.json', updatedRegistrations);
-        if (!result.success) {
-          // S3 update failed for payment status
-        }
+        const { updateRegistrationStatus } = await import('../utils/dynamoDBStorage');
+        await updateRegistrationStatus(registrationId, { 
+          status: newStatus,
+          paymentStatus: newStatus === 'Payment Completed' ? 'COMPLETED' : 'PENDING'
+        });
+        console.log('✅ Payment status updated in DynamoDB');
       } catch (error) {
-        // Failed to update S3 storage
+        console.error('❌ Failed to update payment status in DynamoDB:', error);
       }
-      
-      // Update localStorage as backup
-      localStorage.setItem('khplRegistrations', JSON.stringify(updatedRegistrations));
       
     } catch (error) {
       alert('Failed to update payment status. Please try again.');
@@ -203,34 +298,32 @@ const AdminPanel = ({ show, handleClose }) => {
   const deleteRegistration = async (registrationId, userName) => {
     if (window.confirm(`Are you sure you want to delete registration for ${userName}? This action cannot be undone.`)) {
       try {
-        // Remove registration without reindexing (preserve original IDs)
-        const updatedRegistrations = registrations.filter(reg => reg.id !== registrationId);
+        console.log('🗑️ Attempting to delete registration:', registrationId, 'for user:', userName);
         
-        // Update UI immediately
-        setRegistrations(updatedRegistrations);
+        // Delete from DynamoDB first
+        const { deleteRegistration: deleteDynamoRegistration } = await import('../utils/dynamoDBStorage');
         
-        // Try to save to S3
-        try {
-          const { saveToS3 } = await import('../utils/awsS3Storage');
-          const result = await saveToS3('registrations.json', updatedRegistrations);
+        console.log('📡 Calling DynamoDB delete function...');
+        const deleteResult = await deleteDynamoRegistration(registrationId);
+        console.log('📋 Delete result:', deleteResult);
+        
+        if (deleteResult.success) {
+          // Remove from local state only if DynamoDB deletion succeeded
+          const updatedRegistrations = registrations.filter(reg => reg.id !== registrationId);
+          setRegistrations(updatedRegistrations);
           
-          if (!result.success) {
-            // S3 update after deletion failed
-          }
-        } catch (error) {
-          // Failed to update S3 storage after deletion
+          // Update timestamp
+          setLastUpdated(new Date());
+          
+          console.log('✅ Registration deleted successfully from DynamoDB and UI');
+          alert(`Registration for ${userName} has been deleted successfully!`);
+        } else {
+          throw new Error(deleteResult.error || 'DynamoDB deletion failed');
         }
         
-        // Update localStorage as backup
-        localStorage.setItem('khplRegistrations', JSON.stringify(updatedRegistrations));
-        
-        // Update timestamp
-        setLastUpdated(new Date());
-        
-        alert(`Registration for ${userName} has been deleted successfully!`);
-        
       } catch (error) {
-        alert('Failed to delete registration. Please try again.');
+        console.error('❌ Delete registration failed:', error);
+        alert(`Failed to delete registration for ${userName}. Error: ${error.message || 'Please try again.'}`);
       }
     }
   };
@@ -298,7 +391,7 @@ const AdminPanel = ({ show, handleClose }) => {
             <Button 
               variant="danger" 
               size="sm"
-              onClick={clearAllData}
+              onClick={clearAllRegistrations}
               disabled={registrations.length === 0}
             >
               <i className="fas fa-trash me-1"></i>
@@ -310,7 +403,8 @@ const AdminPanel = ({ show, handleClose }) => {
         <div className="alert alert-info mb-3">
           <i className="fas fa-info-circle me-2"></i>
           <strong>Admin Actions:</strong> Use the action buttons to update payment status or delete registrations. 
-          Changes are automatically saved to cloud storage and localStorage.
+          Changes are automatically saved to DynamoDB cloud storage. 
+          <strong className="text-danger">⚠️ Delete operations are permanent and cannot be undone!</strong>
           <Button 
             variant="outline-info" 
             size="sm" 
@@ -328,8 +422,28 @@ const AdminPanel = ({ show, handleClose }) => {
               }
             }}
           >
-            <i className="fab fa-aws me-1"></i>
             Test S3
+          </Button>
+          
+          <Button 
+            variant="outline-warning" 
+            size="sm" 
+            className="ms-2"
+            onClick={async () => {
+              try {
+                const { verifyDynamoDBConnection } = await import('../utils/dynamoDBStorage');
+                const result = await verifyDynamoDBConnection();
+                if (result.success) {
+                  alert(`✅ DynamoDB Connected: ${result.table} (Region: ${result.region})`);
+                } else {
+                  alert(`❌ DynamoDB Error: ${result.reason}`);
+                }
+              } catch (error) {
+                alert(`❌ DynamoDB Test Failed: ${error.message}`);
+              }
+            }}
+          >
+            Test DynamoDB
           </Button>
         </div>
 
@@ -355,19 +469,10 @@ const AdminPanel = ({ show, handleClose }) => {
                 <strong>AWS Access Key:</strong> {process.env.REACT_APP_AWS_ACCESS_KEY_ID ? 'Configured' : 'Not configured'}
               </p>
               <p className="small mb-2">
-                <strong>LocalStorage Data:</strong> {
-                  (() => {
-                    try {
-                      const localData = JSON.parse(localStorage.getItem('khplRegistrations') || '[]');
-                      return localData.length + ' registrations';
-                    } catch {
-                      return 'No valid data';
-                    }
-                  })()
-                }
+                <strong>DynamoDB Table:</strong> {process.env.REACT_APP_DYNAMODB_TABLE_NAME || 'khpl-registrations'}
               </p>
               <p className="small text-info">
-                💡 <strong>Solution:</strong> Create a .env file with AWS credentials or test registration locally
+                💡 <strong>Solution:</strong> Create a .env file with AWS credentials for DynamoDB access
               </p>
               
               <div className="mt-3">
@@ -375,13 +480,13 @@ const AdminPanel = ({ show, handleClose }) => {
                   className="btn btn-sm btn-outline-primary me-2"
                   onClick={addTestRegistration}
                 >
-                  Add Test Registration
+                  Add Test Registration to DynamoDB
                 </button>
                 <button 
                   className="btn btn-sm btn-outline-warning"
-                  onClick={clearLocalStorage}
+                  onClick={clearAllRegistrations}
                 >
-                  Clear LocalStorage
+                  Clear Display Data
                 </button>
               </div>
             </div>
@@ -535,46 +640,62 @@ const AdminPanel = ({ show, handleClose }) => {
       <Modal.Body>
         {selectedUser && (
           <Row>
-            {selectedUser.aadhaarCopy && (
+            {(selectedUser.aadhaarCopy || selectedUser.aadhaarCopyUrl) && (
               <Col md={selectedUser.userPhoto && selectedUser.paymentScreenshot ? 4 : 6} className="mb-4">
                 <div className="text-center">
                   <h6 className="fw-bold mb-3">
                     <i className="fas fa-id-card me-2 text-info"></i>
                     Aadhaar Copy
+                    {selectedUser.aadhaarCopyUrl && (
+                      <Badge bg="info" className="ms-2 small">S3</Badge>
+                    )}
+                    {selectedUser.s3ImagesLoaded && (
+                      <Badge bg="success" className="ms-1 small">Loaded</Badge>
+                    )}
                   </h6>
                   <div className="border rounded p-3 bg-light">
-                    {selectedUser.aadhaarCopy.startsWith('data:image/') ? (
-                      <>
-                        <Image 
-                          src={selectedUser.aadhaarCopy} 
-                          alt="Aadhaar Copy" 
-                          fluid 
-                          rounded
-                          className="shadow-sm"
-                          style={{ maxHeight: '300px', objectFit: 'contain' }}
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'block';
-                          }}
-                        />
-                        <div className="text-muted mt-2" style={{ display: 'none' }}>
-                          <i className="fas fa-image fs-1"></i>
-                          <div>Image not available</div>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-center py-4">
-                        <i className="fas fa-file-pdf fa-4x text-danger mb-3"></i>
-                        <div className="text-muted">PDF Document</div>
-                        <div className="small text-muted">Preview not available</div>
-                      </div>
-                    )}
+                    {(() => {
+                      const imageSource = selectedUser.aadhaarCopyUrl || selectedUser.aadhaarCopy;
+                      const isPDF = imageSource && (imageSource.startsWith('data:application/pdf') || imageSource.endsWith('.pdf'));
+                      
+                      if (isPDF) {
+                        return (
+                          <div className="text-center py-4">
+                            <i className="fas fa-file-pdf fa-4x text-danger mb-3"></i>
+                            <div className="text-muted">PDF Document</div>
+                            <div className="small text-muted">Preview not available</div>
+                          </div>
+                        );
+                      } else if (imageSource) {
+                        return (
+                          <>
+                            <Image 
+                              src={imageSource} 
+                              alt="Aadhaar Copy" 
+                              fluid 
+                              rounded
+                              className="shadow-sm"
+                              style={{ maxHeight: '300px', objectFit: 'contain' }}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'block';
+                              }}
+                            />
+                            <div className="text-muted mt-2" style={{ display: 'none' }}>
+                              <i className="fas fa-image fs-1"></i>
+                              <div>Image not available</div>
+                            </div>
+                          </>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                   <Button 
                     variant="outline-info" 
                     size="sm" 
                     className="mt-2"
-                    onClick={() => window.open(selectedUser.aadhaarCopy, '_blank')}
+                    onClick={() => window.open(selectedUser.aadhaarCopyUrl || selectedUser.aadhaarCopy, '_blank')}
                   >
                     <i className="fas fa-external-link-alt me-1"></i>
                     Open in New Tab
@@ -583,16 +704,22 @@ const AdminPanel = ({ show, handleClose }) => {
               </Col>
             )}
             
-            {selectedUser.userPhoto && (
+            {(selectedUser.userPhoto || selectedUser.userPhotoUrl) && (
               <Col md={selectedUser.aadhaarCopy && selectedUser.paymentScreenshot ? 4 : 6} className="mb-4">
                 <div className="text-center">
                   <h6 className="fw-bold mb-3">
                     <i className="fas fa-user-circle me-2 text-primary"></i>
                     User Photo
+                    {selectedUser.userPhotoUrl && (
+                      <Badge bg="primary" className="ms-2 small">S3</Badge>
+                    )}
+                    {selectedUser.s3ImagesLoaded && (
+                      <Badge bg="success" className="ms-1 small">Loaded</Badge>
+                    )}
                   </h6>
                   <div className="border rounded p-3 bg-light">
                     <Image 
-                      src={selectedUser.userPhoto} 
+                      src={selectedUser.userPhotoUrl || selectedUser.userPhoto} 
                       alt="User Photo" 
                       fluid 
                       rounded
@@ -612,7 +739,7 @@ const AdminPanel = ({ show, handleClose }) => {
                     variant="outline-primary" 
                     size="sm" 
                     className="mt-2"
-                    onClick={() => window.open(selectedUser.userPhoto, '_blank')}
+                    onClick={() => window.open(selectedUser.userPhotoUrl || selectedUser.userPhoto, '_blank')}
                   >
                     <i className="fas fa-external-link-alt me-1"></i>
                     Open in New Tab
@@ -621,16 +748,22 @@ const AdminPanel = ({ show, handleClose }) => {
               </Col>
             )}
             
-            {selectedUser.paymentScreenshot && (
+            {(selectedUser.paymentScreenshot || selectedUser.paymentScreenshotUrl) && (
               <Col md={selectedUser.aadhaarCopy && selectedUser.userPhoto ? 4 : 6} className="mb-4">
                 <div className="text-center">
                   <h6 className="fw-bold mb-3">
                     <i className="fas fa-receipt me-2 text-success"></i>
                     Payment Screenshot
+                    {selectedUser.paymentScreenshotUrl && (
+                      <Badge bg="success" className="ms-2 small">S3</Badge>
+                    )}
+                    {selectedUser.s3ImagesLoaded && (
+                      <Badge bg="success" className="ms-1 small">Loaded</Badge>
+                    )}
                   </h6>
                   <div className="border rounded p-3 bg-light">
                     <Image 
-                      src={selectedUser.paymentScreenshot} 
+                      src={selectedUser.paymentScreenshotUrl || selectedUser.paymentScreenshot} 
                       alt="Payment Screenshot" 
                       fluid 
                       rounded
@@ -650,7 +783,7 @@ const AdminPanel = ({ show, handleClose }) => {
                     variant="outline-success" 
                     size="sm" 
                     className="mt-2"
-                    onClick={() => window.open(selectedUser.paymentScreenshot, '_blank')}
+                    onClick={() => window.open(selectedUser.paymentScreenshotUrl || selectedUser.paymentScreenshot, '_blank')}
                   >
                     <i className="fas fa-external-link-alt me-1"></i>
                     Open in New Tab
@@ -659,12 +792,21 @@ const AdminPanel = ({ show, handleClose }) => {
               </Col>
             )}
             
-            {!selectedUser.userPhoto && !selectedUser.paymentScreenshot && !selectedUser.aadhaarCopy && (
+            {!selectedUser.userPhoto && !selectedUser.paymentScreenshot && !selectedUser.aadhaarCopy && 
+             !selectedUser.userPhotoUrl && !selectedUser.paymentScreenshotUrl && !selectedUser.aadhaarCopyUrl && (
               <Col xs={12}>
                 <div className="text-center text-muted py-5">
                   <i className="fas fa-inbox fs-1 mb-3"></i>
                   <h5>No Attachments Found</h5>
                   <p>This registration doesn't have any uploaded images or documents.</p>
+                  {selectedUser.imageUploadStatus && (
+                    <div className="mt-3">
+                      <Badge bg="warning">
+                        Upload Status: {selectedUser.imageUploadStatus} 
+                        ({selectedUser.uploadedImageCount || 0}/{selectedUser.totalImageCount || 0})
+                      </Badge>
+                    </div>
+                  )}
                 </div>
               </Col>
             )}
@@ -672,14 +814,50 @@ const AdminPanel = ({ show, handleClose }) => {
         )}
       </Modal.Body>
       <Modal.Footer>
-        <div className="w-100 d-flex justify-content-between align-items-center">
-          <div className="text-muted small">
-            <i className="fas fa-info-circle me-1"></i>
-            Registration ID: #{selectedUser?.id} | {selectedUser?.email}
+        <div className="w-100">
+          <div className="d-flex justify-content-between align-items-center mb-2">
+            <div className="text-muted small">
+              <i className="fas fa-info-circle me-1"></i>
+              Registration ID: #{selectedUser?.id} | {selectedUser?.email}
+            </div>
+            <Button variant="secondary" onClick={closeAttachmentsModal}>
+              Close
+            </Button>
           </div>
-          <Button variant="secondary" onClick={closeAttachmentsModal}>
-            Close
-          </Button>
+          {selectedUser && (
+            <div className="small text-muted">
+              {selectedUser.imageUploadStatus && (
+                <div>
+                  <i className="fas fa-cloud-upload-alt me-1"></i>
+                  Upload Status: 
+                  <Badge 
+                    bg={selectedUser.imageUploadStatus === 'completed' ? 'success' : 
+                        selectedUser.imageUploadStatus === 'failed' ? 'danger' : 'warning'} 
+                    className="ms-1"
+                  >
+                    {selectedUser.imageUploadStatus}
+                  </Badge>
+                  {selectedUser.uploadedImageCount !== undefined && (
+                    <span className="ms-2">
+                      ({selectedUser.uploadedImageCount}/{selectedUser.totalImageCount} uploaded)
+                    </span>
+                  )}
+                </div>
+              )}
+              {selectedUser.s3ImagesLoaded && (
+                <div className="mt-1">
+                  <i className="fas fa-check-circle me-1 text-success"></i>
+                  Images loaded from S3 successfully
+                </div>
+              )}
+              {selectedUser.s3LoadError && (
+                <div className="mt-1">
+                  <i className="fas fa-exclamation-triangle me-1 text-warning"></i>
+                  S3 Load Error: {selectedUser.s3LoadError}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </Modal.Footer>
     </Modal>

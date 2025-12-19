@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Modal, Button, Form, Row, Col, Alert, Spinner, Badge } from 'react-bootstrap';
-import { saveRegistrationData } from '../utils/awsS3Storage';
+import { saveRegistrationToDynamoDB } from '../utils/dynamoDBStorage';
+import { uploadMultipleRegistrationImages } from '../utils/registrationImageUpload';
+import { performHealthCheck, logHealthStatus } from '../utils/systemHealthCheck';
 
 // Utility function to convert file to base64
 const fileToBase64 = (file) => {
@@ -21,7 +23,11 @@ const RegistrationModal = ({ show, handleClose }) => {
     playerType: '',
     image: null,
     userPhoto: null,
-    paymentScreenshot: null
+    paymentScreenshot: null,
+    // File objects for S3 upload
+    aadhaarCopyFile: null,
+    imageFile: null,
+    paymentScreenshotFile: null
   });
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
@@ -31,9 +37,23 @@ const RegistrationModal = ({ show, handleClose }) => {
   const [showSuccessScreen, setShowSuccessScreen] = useState(false);
   const [successData, setSuccessData] = useState(null);
   const [paymentScreenshot, setPaymentScreenshot] = useState(null);
+  const [systemHealth, setSystemHealth] = useState(null);
+  const [isCheckingHealth, setIsCheckingHealth] = useState(false);
 
   const handleModalClose = () => {
-    setFormData({ name: '', email: '', phoneNumber: '', aadhaarCopy: null, playerType: '', image: null, userPhoto: null, paymentScreenshot: null });
+    setFormData({ 
+      name: '', 
+      email: '', 
+      phoneNumber: '', 
+      aadhaarCopy: null, 
+      playerType: '', 
+      image: null, 
+      userPhoto: null, 
+      paymentScreenshot: null,
+      aadhaarCopyFile: null,
+      imageFile: null,
+      paymentScreenshotFile: null
+    });
     setShowPaymentScreen(false);
     setShowSuccessScreen(false);
     setSuccessData(null);
@@ -54,12 +74,13 @@ const RegistrationModal = ({ show, handleClose }) => {
     const file = e.target.files[0];
     if (file) {
       try {
-        // Convert to base64 for storage and display
+        // Convert to base64 for preview display
         const base64 = await fileToBase64(file);
         setFormData(prev => ({
           ...prev,
           image: file,
-          userPhoto: base64 // Store base64 for display
+          imageFile: file, // Store file object for S3 upload
+          userPhoto: base64 // Store base64 for preview display
         }));
       } catch (error) {
         console.error('Error processing image:', error);
@@ -71,12 +92,13 @@ const RegistrationModal = ({ show, handleClose }) => {
     const file = e.target.files[0];
     if (file) {
       try {
-        // Convert to base64 for storage and display
+        // Convert to base64 for preview display
         const base64 = await fileToBase64(file);
         setPaymentScreenshot(file);
         setFormData(prev => ({
           ...prev,
-          paymentScreenshot: base64 // Store base64 for display
+          paymentScreenshot: base64, // Store base64 for preview display
+          paymentScreenshotFile: file // Store file object for S3 upload
         }));
       } catch (error) {
         throw error;
@@ -88,12 +110,12 @@ const RegistrationModal = ({ show, handleClose }) => {
     const file = e.target.files[0];
     if (file) {
       try {
-        // Convert to base64 for storage and display
+        // Convert to base64 for preview display
         const base64 = await fileToBase64(file);
         setFormData(prev => ({
           ...prev,
           aadhaarCopy: base64,
-          aadhaarCopyFile: file
+          aadhaarCopyFile: file // Store file object for S3 upload
         }));
       } catch (error) {
         throw error;
@@ -101,11 +123,34 @@ const RegistrationModal = ({ show, handleClose }) => {
     }
   };
 
+  // Helper function to update registration image status
+  const updateRegistrationImageStatus = async (registrationId, updateData) => {
+    try {
+      const { updateRegistrationStatus } = await import('../utils/dynamoDBStorage');
+      await updateRegistrationStatus(registrationId, updateData);
+    } catch (error) {
+      console.error('Error updating image status:', error);
+    }
+  };
+
   const addToInternalSheet = async (data, paymentInfo = {}) => {
     try {
-      // Create registration data with enhanced details
+      // Generate unique registration ID
+      const registrationId = `KHPL_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      console.log('🔄 Starting registration save process for ID:', registrationId);
+      
+      // Create registration data without File objects for DynamoDB
       const registrationData = {
-        ...data,
+        id: registrationId,
+        // Only include serializable string/number/boolean data
+        name: data.name || '',
+        email: data.email || '',
+        phoneNumber: data.phoneNumber || '',
+        playerType: data.playerType || '',
+        aadhaarNumber: data.aadhaarNumber || '',
+        city: data.city || '',
+        team: data.team || '',
         registrationDate: new Date().toLocaleString(),
         imageName: data.image ? data.image.name : 'No image',
         paymentScreenshotName: paymentScreenshot ? paymentScreenshot.name : null,
@@ -113,50 +158,88 @@ const RegistrationModal = ({ show, handleClose }) => {
         paymentId: paymentInfo.transactionId || null,
         amount: 999,
         paymentStatus: paymentInfo.paymentStatus || 'PENDING',
-        // Include base64 images for display in admin panel
-        userPhoto: data.userPhoto || null,
-        paymentScreenshot: data.paymentScreenshot || null
+        // Initialize image status
+        imageUploadStatus: 'pending',
+        hasImages: !!(data.aadhaarCopyFile || data.imageFile || data.paymentScreenshotFile),
+        uploadedImageCount: 0,
+        totalImageCount: [data.aadhaarCopyFile, data.imageFile, data.paymentScreenshotFile].filter(Boolean).length
       };
       
-      
-      // Use the centralized save function (it handles ID generation and storage)
-      const result = await saveRegistrationData(registrationData);
+      // Save to DynamoDB first (without waiting for images)
+      console.log('💾 Saving registration to DynamoDB...');
+      let result = await saveRegistrationToDynamoDB(registrationData);
       
       if (result.success) {
+        console.log('✅ Registration saved to DynamoDB successfully');
+        
+        // Upload images to S3 in parallel (don't wait for completion)
+        const imageFiles = {};
+        console.log('🔍 Checking for image files:', {
+          aadhaarCopyFile: !!data.aadhaarCopyFile,
+          imageFile: !!data.imageFile,
+          paymentScreenshotFile: !!data.paymentScreenshotFile
+        });
+        
+        if (data.aadhaarCopyFile) {
+          console.log('📎 Adding Aadhaar file:', data.aadhaarCopyFile.name, data.aadhaarCopyFile.size);
+          imageFiles.aadhaar = data.aadhaarCopyFile;
+        }
+        if (data.imageFile) {
+          console.log('📎 Adding user photo:', data.imageFile.name, data.imageFile.size);
+          imageFiles.userPhoto = data.imageFile;
+        }
+        if (data.paymentScreenshotFile) {
+          console.log('📎 Adding payment screenshot:', data.paymentScreenshotFile.name, data.paymentScreenshotFile.size);
+          imageFiles.paymentScreenshot = data.paymentScreenshotFile;
+        }
+        
+        if (Object.keys(imageFiles).length > 0) {
+          console.log('🚀 Starting parallel image upload to S3 for', Object.keys(imageFiles).length, 'files:', Object.keys(imageFiles));
+          
+          // Start image upload in background (don't await)
+          uploadMultipleRegistrationImages(registrationId, imageFiles)
+            .then(async (imageUploadResults) => {
+              console.log('📊 Image upload completed:', imageUploadResults);
+              
+              // Update DynamoDB with image upload status
+              try {
+                const updateData = {
+                  imageUploadStatus: imageUploadResults.success ? 'completed' : 'failed',
+                  uploadedImageCount: imageUploadResults.summary?.successful || 0,
+                  imageUploadResults: imageUploadResults.results
+                };
+                
+                await updateRegistrationImageStatus(registrationId, updateData);
+                console.log('✅ Updated registration with image status');
+              } catch (updateError) {
+                console.error('❌ Failed to update image status:', updateError);
+              }
+            })
+            .catch(error => {
+              console.error('❌ Image upload failed:', error);
+              // Update status to failed
+              updateRegistrationImageStatus(registrationId, {
+                imageUploadStatus: 'failed',
+                uploadError: error.message
+              }).catch(console.error);
+            });
+        }
+        
         return result.data;
       } else {
-        throw new Error(result.error || 'Failed to save registration');
+        console.error('❌ DynamoDB save failed:', result.error);
+        throw new Error(`Registration failed: ${result.error || 'Database not available'}`);
       }
     } catch (error) {
-      
-      // Final fallback to localStorage only
-      try {
-        const existingData = JSON.parse(localStorage.getItem('khplRegistrations') || '[]');
-        const newRegistration = {
-          id: Date.now(), // Use timestamp for unique ID
-          ...data,
-          registrationDate: new Date().toLocaleString(),
-          imageName: data.image ? data.image.name : 'No image',
-          paymentScreenshotName: data.paymentScreenshot ? data.paymentScreenshot.name : null,
-          status: paymentInfo.status || 'Payment Pending',
-          paymentId: paymentInfo.transactionId || null,
-          amount: 999,
-          paymentStatus: paymentInfo.paymentStatus || 'PENDING'
-        };
-        
-        existingData.push(newRegistration);
-        localStorage.setItem('khplRegistrations', JSON.stringify(existingData));
-        
-        return newRegistration;
-      } catch (fallbackError) {
-        // Final fallback failed
-        throw fallbackError;
-      }
+      console.error('❌ Registration process failed:', error);
+      // No fallback mechanism - fail if DynamoDB is not available
+      throw new Error(`Registration failed: ${error.message || 'Database service unavailable'}`);
     }
   };
 
-  const processUPIPayment = async (registrationData) => {
+  const processUPIPayment = async (registrationData, retryCount = 0) => {
     setIsProcessingPayment(true);
+    const maxRetries = 2;
     
     try {
       const transactionId = `KHPL_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -168,6 +251,8 @@ const RegistrationModal = ({ show, handleClose }) => {
         phone: registrationData.phoneNumber,
         transactionId: transactionId
       };
+      
+      console.log(`🔄 Processing payment attempt ${retryCount + 1}/${maxRetries + 1}`);
       
       // For demo purposes, we'll simulate a successful payment
       // In production, use the actual UPI Gateway API
@@ -193,20 +278,53 @@ const RegistrationModal = ({ show, handleClose }) => {
         setShowPaymentScreen(false);
         setShowSuccessScreen(true);
         
+        console.log('✅ Payment processed successfully');
+        
       } else {
         throw new Error(paymentResult.error || 'Payment failed');
       }
       
     } catch (error) {
+      console.error(`❌ Payment attempt ${retryCount + 1} failed:`, error.message);
       
-      // Add registration with payment failure
-      await addToInternalSheet(formData, {
-        status: 'Payment Failed',
-        transactionId: null,
-        paymentStatus: 'FAILED'
-      });
+      // Retry logic for network-related failures
+      const retryableErrors = ['Network timeout', 'UPI service temporarily unavailable', 'timeout'];
+      const isRetryable = retryableErrors.some(err => error.message.toLowerCase().includes(err.toLowerCase()));
       
-      setAlertMessage(`Payment failed: ${error.message}. Registration saved with pending payment status.`);
+      if (isRetryable && retryCount < maxRetries) {
+        console.log(`🔄 Retrying payment in 3 seconds... (attempt ${retryCount + 2}/${maxRetries + 1})`);
+        setAlertMessage(`Payment failed: ${error.message}. Retrying automatically...`);
+        setAlertVariant('warning');
+        setShowAlert(true);
+        
+        // Wait 3 seconds before retry
+        setTimeout(() => {
+          processUPIPayment(registrationData, retryCount + 1);
+        }, 3000);
+        return;
+      }
+      
+      // Final failure - save registration with payment failure status
+      try {
+        await addToInternalSheet(formData, {
+          status: 'Payment Failed',
+          transactionId: null,
+          paymentStatus: 'FAILED',
+          failureReason: error.message
+        });
+        
+        setAlertMessage(
+          `Payment failed after ${retryCount + 1} attempt${retryCount > 0 ? 's' : ''}: ${error.message}. ` +
+          `Your registration has been saved and you can retry payment later by contacting support.`
+        );
+      } catch (registrationError) {
+        console.error('❌ Failed to save registration after payment failure:', registrationError);
+        setAlertMessage(
+          `Payment failed: ${error.message}. Additionally, there was an issue saving your registration. ` +
+          `Please contact support with your details.`
+        );
+      }
+      
       setAlertVariant('danger');
       setShowAlert(true);
     } finally {
@@ -224,6 +342,17 @@ const RegistrationModal = ({ show, handleClose }) => {
     }
     
     try {
+      // Check database connectivity before processing payment
+      const { validateConfiguration } = await import('../utils/dynamoDBStorage');
+      const dbConfigValid = validateConfiguration();
+      
+      if (!dbConfigValid) {
+        setAlertMessage('Database service is not properly configured. Please contact support.');
+        setAlertVariant('warning');
+        setShowAlert(true);
+        // Allow payment to continue even with DB issues for better UX
+      }
+      
       // Add payment screenshot to form data (use the base64 version from formData)
       const paymentData = {
         ...formData,
@@ -231,7 +360,8 @@ const RegistrationModal = ({ show, handleClose }) => {
       };
       await processUPIPayment(paymentData);
     } catch (error) {
-      setAlertMessage('Error processing payment. Please try again.');
+      console.error('❌ Payment completion error:', error);
+      setAlertMessage(`Error processing payment: ${error.message || 'Please try again.'}`);;
       setAlertVariant('danger');
       setShowAlert(true);
       setShowPaymentScreen(false);
@@ -244,13 +374,46 @@ const RegistrationModal = ({ show, handleClose }) => {
     setPaymentScreenshot(null);
   };
 
+  const runSystemHealthCheck = async () => {
+    setIsCheckingHealth(true);
+    try {
+      const health = await performHealthCheck();
+      setSystemHealth(health);
+      
+      // Show health summary in alert
+      if (health.overall === 'healthy') {
+        setAlertMessage('✅ All systems are working properly. Payment failures may be temporary - please try again.');
+        setAlertVariant('success');
+      } else if (health.overall === 'warning') {
+        setAlertMessage('⚠️ Some system components have issues. Payment may still work, but there could be delays.');
+        setAlertVariant('warning');
+      } else {
+        setAlertMessage('❌ System issues detected. Please contact support for assistance.');
+        setAlertVariant('danger');
+      }
+      
+      setShowAlert(true);
+      
+      // Log detailed health report to console for debugging
+      await logHealthStatus();
+      
+    } catch (error) {
+      console.error('❌ Health check failed:', error);
+      setAlertMessage('Unable to run system check. Please contact support.');
+      setAlertVariant('danger');
+      setShowAlert(true);
+    } finally {
+      setIsCheckingHealth(false);
+    }
+  };
+
   // Simulate UPI Gateway payment for demo (replace with actual integration)
   const simulateUPIPayment = async (paymentData) => {
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Simulate success (90% success rate for demo)
-    const isSuccess = Math.random() > 0.1;
+    // Simulate success (95% success rate for better user experience)
+    const isSuccess = Math.random() > 0.05;
     
     if (isSuccess) {
       return {
@@ -260,9 +423,19 @@ const RegistrationModal = ({ show, handleClose }) => {
         amount: paymentData.amount
       };
     } else {
+      // Simulate different types of failures
+      const failureReasons = [
+        'Insufficient balance in account',
+        'Payment declined by bank',
+        'Network timeout - please retry',
+        'UPI service temporarily unavailable',
+        'Invalid UPI PIN entered'
+      ];
+      const randomFailure = failureReasons[Math.floor(Math.random() * failureReasons.length)];
+      
       return {
         success: false,
-        error: 'Payment declined by bank'
+        error: randomFailure
       };
     }
   };
@@ -301,9 +474,9 @@ const RegistrationModal = ({ show, handleClose }) => {
     // Show payment screen instead of processing payment immediately
     setShowPaymentScreen(true);
     setShowAlert(false);
-  };
+  }; // handleSubmit function end
 
-  return (
+  return ( // RegistrationModal component return
     <Modal show={show} onHide={handleModalClose} size="lg" centered backdrop="static" keyboard={false}>
       <Modal.Header closeButton className="bg-primary text-white">
         <Modal.Title>

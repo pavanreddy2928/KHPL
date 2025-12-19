@@ -33,47 +33,23 @@ const RegistrationStatus = () => {
     setSearchResult(null);
 
     try {
-      // Load registrations from S3 or localStorage
-      const { loadRegistrationData } = await import('../utils/awsS3Storage');
+      // Load registrations from DynamoDB only
+      const { loadRegistrationsFromDynamoDB } = await import('../utils/dynamoDBStorage');
       let registrations = [];
       
       console.log('Starting registration search...');
       
       try {
-        registrations = await loadRegistrationData();
+        registrations = await loadRegistrationsFromDynamoDB();
         if (registrations && Array.isArray(registrations)) {
-          console.log('Loaded from storage:', registrations.length, 'registrations');
+          console.log('Loaded from DynamoDB:', registrations.length, 'registrations');
         } else {
           registrations = [];
-          console.log('No registration data found');
+          console.log('No registration data found in DynamoDB');
         }
       } catch (error) {
-        console.log('Storage load failed:', error.message);
+        console.log('DynamoDB load failed:', error.message);
         registrations = [];
-      }
-
-      // If no registrations found, create a test registration for demonstration
-      if (registrations.length === 0) {
-        console.log('No registrations found, creating test data...');
-        const testRegistration = {
-          id: 1,
-          name: 'Test Player',
-          email: 'test@example.com',
-          phoneNumber: '9876543210',
-          aadhaarCopy: 'test-base64-data',
-          playerType: 'Batsman',
-
-          amount: 999,
-          paymentStatus: 'SUCCESS',
-          status: 'Active',
-          registrationDate: new Date().toLocaleDateString(),
-          userPhoto: null,
-          paymentScreenshot: null
-        };
-        registrations = [testRegistration];
-        // Save test data to localStorage
-        localStorage.setItem('khplRegistrations', JSON.stringify(registrations));
-        console.log('Test registration created with phoneNumber: 9876543210 and aadhaarNumber: 123456789012');
       }
 
       // Search through registrations

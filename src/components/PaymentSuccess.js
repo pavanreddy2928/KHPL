@@ -36,7 +36,7 @@ const PaymentSuccess = () => {
         });
         setPaymentStatus('success');
         
-        // Update registration status in localStorage
+        // Update registration status in DynamoDB
         updateRegistrationStatus(transactionId, 'SUCCESS');
       } else {
         setPaymentStatus('failed');
@@ -49,19 +49,17 @@ const PaymentSuccess = () => {
     }
   };
 
-  const updateRegistrationStatus = (transactionId, status) => {
-    const registrations = JSON.parse(localStorage.getItem('khplRegistrations') || '[]');
-    const updatedRegistrations = registrations.map(reg => {
-      if (reg.paymentId === transactionId) {
-        return {
-          ...reg,
-          paymentStatus: status,
-          status: status === 'SUCCESS' ? 'Active' : 'Payment Failed'
-        };
-      }
-      return reg;
-    });
-    localStorage.setItem('khplRegistrations', JSON.stringify(updatedRegistrations));
+  const updateRegistrationStatus = async (transactionId, status) => {
+    try {
+      const { updateRegistrationStatus } = await import('../utils/dynamoDBStorage');
+      await updateRegistrationStatus(transactionId, {
+        paymentStatus: status,
+        status: status === 'SUCCESS' ? 'Active' : 'Payment Failed'
+      });
+      console.log('Payment status updated in DynamoDB');
+    } catch (error) {
+      console.error('Failed to update payment status in DynamoDB:', error);
+    }
   };
 
   const handleBackToHome = () => {

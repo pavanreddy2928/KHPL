@@ -13,19 +13,18 @@ const RegistrationSheet = () => {
 
   const loadRegistrations = async () => {
     try {
-      // Load from S3 with localStorage fallback
-      const data = await loadRegistrationData();
+      // Load from DynamoDB only
+      const { loadRegistrationsFromDynamoDB } = await import('../utils/dynamoDBStorage');
+      const data = await loadRegistrationsFromDynamoDB();
       if (data && Array.isArray(data)) {
         setRegistrations(data);
-        return;
+      } else {
+        setRegistrations([]);
       }
     } catch (error) {
-      // Silent fallback to localStorage
+      console.error('Failed to load registrations from DynamoDB:', error);
+      setRegistrations([]);
     }
-    
-    // Final fallback to localStorage
-    const localData = JSON.parse(localStorage.getItem('khplRegistrations') || '[]');
-    setRegistrations(localData);
   };
 
   const downloadExcelSheet = () => {
