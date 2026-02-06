@@ -33,23 +33,57 @@ const RegistrationSheet = () => {
       return;
     }
 
+    // Prepare formatted data for Excel export
+    const exportData = registrations.map(reg => {
+      // Extract user photo URL from imageUploadResults
+      let userPhotoUrl = '';
+      if (reg.imageUploadResults && reg.imageUploadResults.userPhoto && reg.imageUploadResults.userPhoto.url) {
+        userPhotoUrl = reg.imageUploadResults.userPhoto.url;
+      } else if (reg.userPhotoUrl || reg.userPhoto) {
+        userPhotoUrl = reg.userPhotoUrl || reg.userPhoto;
+      }
+
+      // Extract aadhaar copy URL from imageUploadResults
+      let aadhaarStatus = 'Not Uploaded';
+      if (reg.imageUploadResults && reg.imageUploadResults.aadhaar && reg.imageUploadResults.aadhaar.success) {
+        aadhaarStatus = 'Uploaded';
+      } else if (reg.aadhaarCopy) {
+        aadhaarStatus = 'Uploaded';
+      }
+
+      return {
+        'Registration ID': reg.id || 'N/A',
+        'Name': reg.name || '',
+        'Email': reg.email || '',
+        'Phone': reg.phoneNumber || reg.phone || '',
+        'District': reg.district || '',
+        'Aadhaar Copy': aadhaarStatus,
+        'Player Type': reg.playerType || '',
+        'User Photo URL': userPhotoUrl,
+        'Registration Date': reg.registrationDate || new Date().toLocaleDateString(),
+        'Payment Status': reg.paymentStatus || 'PENDING',
+        'Status': reg.status || 'Pending'
+      };
+    });
+
     // Create Excel workbook
-    const ws = XLSX.utils.json_to_sheet(registrations);
+    const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'KHPL Registrations');
     
     // Auto-adjust column widths
     const colWidths = [
-      { wch: 8 },  // ID
+      { wch: 15 }, // Registration ID
       { wch: 20 }, // Name
       { wch: 30 }, // Email  
       { wch: 15 }, // Phone
       { wch: 15 }, // District
       { wch: 15 }, // Aadhaar Copy
       { wch: 15 }, // Player Type
+      { wch: 50 }, // User Photo URL
       { wch: 20 }, // Registration Date
-      { wch: 15 }, // Image Name
-      { wch: 10 }  // Status
+      { wch: 15 }, // Payment Status
+      { wch: 12 }  // Status
     ];
     ws['!cols'] = colWidths;
     

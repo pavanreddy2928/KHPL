@@ -41,6 +41,12 @@ const AdminPanel = ({ show, handleClose }) => {
       console.log('📊 Is array:', Array.isArray(data));
       console.log('📊 Data length:', data ? data.length : 0);
       
+      // Debug: Log the structure of image data for the first few registrations
+      if (data && Array.isArray(data) && data.length > 0) {
+        console.log('🔍 First registration imageUploadResults:', data[0]?.imageUploadResults);
+        console.log('🔍 User photo data structure:', data[0]?.imageUploadResults?.userPhoto);
+      }
+      
       if (data && Array.isArray(data)) {
         setRegistrations(data);
         setLastUpdated(new Date());
@@ -99,19 +105,37 @@ const AdminPanel = ({ show, handleClose }) => {
 
     try {
       // Prepare data for Excel export
-      const exportData = registrations.map(reg => ({
-        'Registration ID': reg.id || 'N/A',
-        'Name': reg.name || '',
-        'Email': reg.email || '',
-        'Phone': reg.phoneNumber || reg.phone || '',
-        'District': reg.district || '',
-        'Aadhaar Copy': reg.aadhaarCopy ? 'Uploaded' : 'Not Uploaded',
-        'Player Type': reg.playerType || '',
+      const exportData = registrations.map(reg => {
+        // Extract user photo URL from imageUploadResults
+        let userPhotoUrl = '';
+        if (reg.imageUploadResults && reg.imageUploadResults.userPhoto && reg.imageUploadResults.userPhoto.url) {
+          userPhotoUrl = reg.imageUploadResults.userPhoto.url;
+        } else if (reg.userPhotoUrl || reg.userPhoto) {
+          userPhotoUrl = reg.userPhotoUrl || reg.userPhoto;
+        }
 
-        'Registration Date': reg.registrationDate || new Date().toLocaleDateString(),
-        'Payment Status': reg.paymentStatus || 'PENDING',
-        'Status': reg.status || 'Pending'
-      }));
+        // Extract aadhaar copy URL from imageUploadResults
+        let aadhaarStatus = 'Not Uploaded';
+        if (reg.imageUploadResults && reg.imageUploadResults.aadhaar && reg.imageUploadResults.aadhaar.success) {
+          aadhaarStatus = 'Uploaded';
+        } else if (reg.aadhaarCopy) {
+          aadhaarStatus = 'Uploaded';
+        }
+
+        return {
+          'Registration ID': reg.id || 'N/A',
+          'Name': reg.name || '',
+          'Email': reg.email || '',
+          'Phone': reg.phoneNumber || reg.phone || '',
+          'District': reg.district || '',
+          'Aadhaar Copy': aadhaarStatus,
+          'Player Type': reg.playerType || '',
+          'User Photo URL': userPhotoUrl,
+          'Registration Date': reg.registrationDate || new Date().toLocaleDateString(),
+          'Payment Status': reg.paymentStatus || 'PENDING',
+          'Status': reg.status || 'Pending'
+        };
+      });
 
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
@@ -126,6 +150,7 @@ const AdminPanel = ({ show, handleClose }) => {
         { wch: 15 }, // District
         { wch: 15 }, // Aadhaar Copy
         { wch: 15 }, // Player Type
+        { wch: 50 }, // User Photo URL
         { wch: 20 }, // Registration Date
         { wch: 15 }, // Payment Status
         { wch: 12 }  // Status
