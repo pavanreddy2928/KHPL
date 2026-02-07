@@ -212,3 +212,16 @@ h1::before, h2::before {
 .bg-dark {
   background: linear-gradient(135deg, #8B4513 0%, #A0522D 50%, #654321 100%) !important;
 }
+
+/* Pulse animation for success icon */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
